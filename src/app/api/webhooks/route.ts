@@ -18,11 +18,9 @@ if (!getApps().length) {
 
 const adminDb = getFirestore();
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+// Remove the deprecated config export and use the new route segment config
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 async function buffer(readable: Readable) {
   const chunks = [];
