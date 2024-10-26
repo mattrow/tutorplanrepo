@@ -14,9 +14,10 @@ interface PricingProps {
   userId: string;
   userEmail: string;
   onSubscribe: (priceId: string) => Promise<void>;
+  trialEligible?: boolean;
 }
 
-export default function Pricing({ userId, userEmail, onSubscribe }: PricingProps) {
+export default function Pricing({ userId, userEmail, onSubscribe, trialEligible = true }: PricingProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubscribe = async (priceId: string) => {
@@ -120,12 +121,24 @@ export default function Pricing({ userId, userEmail, onSubscribe }: PricingProps
               ))}
             </div>
 
+            <div className="text-center mb-4">
+              {trialEligible ? (
+                <div className="text-[#396afc] font-medium">
+                  Start with a 7-day free trial
+                </div>
+              ) : (
+                <div className="text-gray-500">
+                  Subscribe now
+                </div>
+              )}
+            </div>
+
             <Button
               onClick={() => handleSubscribe(process.env.NEXT_PUBLIC_STRIPE_PRICE_ID!)}
               disabled={isLoading}
               className="w-full bg-[#396afc] text-white py-6 px-8 text-2xl rounded-2xl font-bold hover:bg-[#2948ff] transition-colors duration-200 h-auto"
             >
-              {isLoading ? 'Processing...' : 'Start Free Trial'}
+              {isLoading ? 'Processing...' : trialEligible ? 'Start Free Trial' : 'Subscribe Now'}
             </Button>
 
             <div className="mt-4 flex items-center justify-center gap-6 text-sm text-gray-500">

@@ -2,12 +2,20 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { stripe } from '@/stripe/config';
+import { firestore } from '@/firebase/admin';
 
 export async function POST(req: Request) {
   const { priceId, metadata } = await req.json();
-  const { userId, email } = metadata; // Add email to metadata
+  const { userId, email } = metadata;
 
   try {
+    // Check if user has had a trial before
+    const userDoc = await firestore.collection('users').doc(userId).get();
+    const userData = userDoc.data();
+    
+    // Determine trial eligibility
+    const trialEligible = !userData?.hasHadTrial;
+    
     // Create or retrieve a customer
     let customer;
     const existingCustomers = await stripe.customers.list({
@@ -34,11 +42,14 @@ export async function POST(req: Request) {
           quantity: 1,
         },
       ],
-      metadata: metadata,
-      mode: 'subscription',
-      subscription_data: {
-        trial_period_days: 7,
+      metadata: {
+        ...metadata,
+        trialEligible: String(trialEligible),
       },
+      mode: 'subscription',
+      subscription_data: trialEligible ? {
+        trial_period_days: 7,
+      } : undefined,
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?success=true`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?canceled=true`,
     });

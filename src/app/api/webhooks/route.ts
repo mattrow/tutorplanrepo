@@ -68,6 +68,18 @@ export async function POST(req: NextRequest) {
         }
         break;
       case 'customer.subscription.updated':
+        const updatedSub = event.data.object;
+        const previousAttributes = event.data.previous_attributes;
+        
+        if (previousAttributes?.status === 'trialing' && updatedSub.status === 'active') {
+          // Trial successfully converted to paid subscription
+          await adminDb.collection('users').doc(updatedSub.metadata?.userId).set({
+            subscriptionStatus: 'active',
+            trialConverted: true,
+            paidSubscriptionStart: new Date(updatedSub.current_period_start * 1000),
+          }, { merge: true });
+        }
+        break;
       case 'customer.subscription.deleted':
         const subscription = event.data.object;
         const subscriptionUserId = subscription.metadata?.userId;
@@ -79,6 +91,20 @@ export async function POST(req: NextRequest) {
           }, { merge: true });
         } else {
           console.error("User ID is undefined in subscription event");
+        }
+        break;
+      case 'customer.subscription.trial_will_end':
+        const trialEndingSub = event.data.object;
+        const trialEndingUserId = trialEndingSub.metadata?.userId;
+        
+        if (trialEndingUserId) {
+          // Send notification that trial is ending soon
+          await adminDb.collection('notifications').add({
+            userId: trialEndingUserId,
+            type: 'trial_ending',
+            message: 'Your trial period will end in 3 days',
+            createdAt: new Date(),
+          });
         }
         break;
       default:
