@@ -136,7 +136,8 @@ export default function Dashboard() {
     return (
       <div className="w-full max-w-6xl">
         <Pricing 
-          userId={user?.uid || ''} 
+          userId={user?.uid || ''}
+          userEmail={user?.email || ''}
           onSubscribe={handleUpgrade}
         />
       </div>

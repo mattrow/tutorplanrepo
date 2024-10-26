@@ -8,21 +8,47 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { loadStripe } from "@stripe/stripe-js";
 
 interface PricingProps {
   userId: string;
+  userEmail: string;
   onSubscribe: (priceId: string) => Promise<void>;
 }
 
-export default function Pricing({ userId, onSubscribe }: PricingProps) {
+export default function Pricing({ userId, userEmail, onSubscribe }: PricingProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubscribe = async (priceId: string) => {
     setIsLoading(true);
     try {
-      await onSubscribe(priceId);
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          priceId,
+          metadata: {
+            userId,
+            email: userEmail,
+            role: 'Pro User',
+          },
+        }),
+      });
+
+      const { sessionId, error } = await response.json();
+      
+      if (error) {
+        throw new Error(error);
+      }
+
+      // Redirect to checkout
+      const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+      await stripe?.redirectToCheckout({ sessionId });
     } catch (error) {
-      console.error('Subscription error:', error);
+      console.error('Error:', error);
+      // Add error handling UI here
     } finally {
       setIsLoading(false);
     }
