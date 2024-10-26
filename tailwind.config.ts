@@ -55,7 +55,15 @@ const config: Config = {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
-  		}
+  		},
+  		fontFamily: {
+  			'satoshi-light': ['Satoshi-Light', 'sans-serif'],
+  			'satoshi': ['Satoshi-Regular', 'sans-serif'],
+  			'satoshi-medium': ['Satoshi-Medium', 'sans-serif'],
+  			'satoshi-bold': ['Satoshi-Bold', 'sans-serif'],
+  			'satoshi-black': ['Satoshi-Black', 'sans-serif'],
+  			'satoshi-variable': ['Satoshi-Variable', 'sans-serif'],
+  		},
   	}
   },
   plugins: [require("tailwindcss-animate")],

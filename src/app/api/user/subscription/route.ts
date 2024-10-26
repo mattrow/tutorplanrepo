@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { adminAuth, firestore } from '../../../../firebase/admin';
 import Stripe from 'stripe';
 
+// Add this line to mark the route as dynamic
+export const dynamic = 'force-dynamic';
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
 });
