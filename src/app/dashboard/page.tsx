@@ -8,13 +8,16 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Flame } from 'lucide-react'
 import Link from 'next/link'
-import Navigation from '@/components/Navigation'
+import Navigation from '@/components/ui/Navigation'
+import Pricing from '@/components/Pricing';
+import Footer from '@/components/ui/Footer';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string);
 
 export default function Dashboard() {
   const { user, loading } = useAuth();
   const [role, setRole] = useState<string | null>(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
@@ -32,70 +35,69 @@ export default function Dashboard() {
 
   const handleUpgrade = async (priceId: string) => {
     setIsLoading(true);
-    const res = await fetch('/api/checkout', {
-      method: 'POST',
-      body: JSON.stringify({ 
-        priceId: priceId,
-        metadata: {
-          userId: user?.uid,
-          role: 'Pro User',
-        },
-      }),
-      headers: { 'Content-Type': 'application/json' }
-    });
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          priceId: priceId,
+          metadata: {
+            userId: user?.uid,
+            role: 'Pro User',
+          },
+        }),
+        headers: { 'Content-Type': 'application/json' }
+      });
 
-    const data = await res.json();
-    const stripe = await stripePromise;
-    await stripe?.redirectToCheckout({ sessionId: data.sessionId });
-    setIsLoading(false);
+      const data = await res.json();
+      const stripe = await stripePromise;
+      await stripe?.redirectToCheckout({ sessionId: data.sessionId });
+    } catch (error) {
+      console.error('Checkout error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!loading && !user) {
-        router.push('/login');
-      }
+    const fetchUserData = async () => {
+      try {
+        const token = await getFirebaseToken();
+        if (token) {
+          // Fetch role
+          const roleRes = await fetch('/api/user/role', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const roleData = await roleRes.json();
+          setRole(roleData.role);
 
-      const fetchRole = async () => {
-        try {
-          const token = await getFirebaseToken();
-          if (token) {
-            const res = await fetch('/api/user/role', {
-              method: 'GET',
-              headers: {
-                Authorization: `Bearer ${token}`,
-              }
-            });
-
-            const data = await res.json();
-            setRole(data.role);
-          }
-        } catch (error) {
-          console.error('Error fetching role:', error);
+          // Fetch subscription status
+          const subRes = await fetch('/api/user/subscription', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const subData = await subRes.json();
+          setSubscriptionStatus(subData.subscriptionStatus);
         }
-      };
-
-      if (user) {
-        fetchRole();
+      } catch (error) {
+        console.error('Error fetching user data:', error);
       }
-    }, 500);
+    };
 
-    return () => clearTimeout(timer);
-  }, [user, loading, router]);
+    if (user) {
+      fetchUserData();
+    }
+  }, [user]);
 
   if (loading || (!user && typeof window !== 'undefined')) {
     return (
       <div className="flex items-center justify-center h-screen bg-[#FFFFFF]">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-[#FF6F61]"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-[#396afc]"></div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-[#FFFFFF] text-[#333333] flex flex-col">
-      <Navigation isAuthenticated={true} />
-      {/* Main content */}
-      <main className="flex-grow flex items-center justify-center px-4 py-12">
+  const renderContent = () => {
+    if (subscriptionStatus === 'active' || role === 'Pro User') {
+      return (
         <Card className="w-full max-w-md bg-[#FFE5E5] border-none">
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-center">Welcome to your dashboard</CardTitle>
@@ -128,28 +130,26 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
-      </main>
+      );
+    }
 
-      {/* Footer */}
-      <footer className="border-t border-[#FFE5E5] w-full">
-        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between py-8 space-y-4 sm:space-y-0">
-          <div className="flex items-center space-x-4">
-            <Flame className="h-6 w-6 text-[#FF6F61]" />
-            <span className="text-sm font-medium">© 2024 SaaSBoiler. All rights reserved.</span>
-          </div>
-          <nav className="flex items-center space-x-4">
-            <Link href="#" className="text-sm font-medium hover:text-[#FF6F61] transition-colors">
-              Terms
-            </Link>
-            <Link href="#" className="text-sm font-medium hover:text-[#FF6F61] transition-colors">
-              Privacy
-            </Link>
-            <Link href="#" className="text-sm font-medium hover:text-[#FF6F61] transition-colors">
-              Contact
-            </Link>
-          </nav>
-        </div>
-      </footer>
+    return (
+      <div className="w-full max-w-6xl">
+        <Pricing 
+          userId={user?.uid || ''} 
+          onSubscribe={handleUpgrade}
+        />
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#396afc] to-[#2948ff] text-white flex flex-col">
+      <Navigation isAuthenticated={true} />
+      <main className="flex-grow flex items-center justify-center px-4 py-12">
+        {renderContent()}
+      </main>
+      <Footer />
     </div>
   );
 }

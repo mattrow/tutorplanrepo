@@ -17,13 +17,19 @@ export async function POST(req: Request) {
       ],
       metadata: metadata,
       mode: 'subscription',
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
+      subscription_data: {
+        trial_period_days: 7, // 7-day free trial
+      },
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?canceled=true`,
     });
 
     return NextResponse.json({ sessionId: session.id });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: 'An error occurred' }, { status: 500 });
+    console.error('Checkout error:', err);
+    return NextResponse.json({ 
+      error: err instanceof Error ? err.message : 'An error occurred',
+      code: 'checkout_error' 
+    }, { status: 500 });
   }
 }

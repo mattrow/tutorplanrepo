@@ -1,11 +1,11 @@
 'use client';
-import Navigation from '@/components/Navigation'
-import Hero from '@/components/Hero'
-import VideoDemo from '@/components/VideoDemo'
-import Features from '@/components/Features'
-import HowItWorks from '@/components/HowItWorks'
-import CTASection from '@/components/CTASection'
-import Footer from '@/components/Footer'
+import Navigation from '@/components/ui/Navigation'
+import Hero from '@/components/ui/Hero'
+import VideoDemo from '@/components/ui/VideoDemo'
+import Features from '@/components/ui/Features'
+import HowItWorks from '@/components/ui/HowItWorks'
+import CTASection from '@/components/ui/CTASection'
+import Footer from '@/components/ui/Footer'
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 

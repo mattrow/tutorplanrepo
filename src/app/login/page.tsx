@@ -1,5 +1,5 @@
 "use client"
-import Navigation from '@/components/Navigation'
+import Navigation from '@/components/ui/Navigation'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
