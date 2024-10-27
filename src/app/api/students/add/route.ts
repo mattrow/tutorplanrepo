@@ -15,12 +15,15 @@ export async function POST(req: NextRequest) {
 
     // Get the student data from the request
     const studentData = await req.json();
+    const now = new Date().toISOString();
 
-    // Add timestamp
+    // Add timestamp and initial values
     const studentWithTimestamp = {
       ...studentData,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      completedLessons: 0,
+      startDate: now,
+      createdAt: now,
+      updatedAt: now
     };
 
     // Add to Firestore

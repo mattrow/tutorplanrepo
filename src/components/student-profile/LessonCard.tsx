@@ -1,5 +1,6 @@
 import React from 'react';
 import { Calendar, ChevronRight, CheckCircle, Clock, Lock } from 'lucide-react';
+import { useRouter } from 'next/navigation'; // Using Next.js router
 
 interface LessonCardProps {
   lesson: {
@@ -14,6 +15,8 @@ interface LessonCardProps {
 }
 
 const LessonCard = ({ lesson, isClickable }: LessonCardProps) => {
+  const router = useRouter();
+
   const getStatusIcon = () => {
     switch (lesson.status) {
       case 'completed':
@@ -25,13 +28,19 @@ const LessonCard = ({ lesson, isClickable }: LessonCardProps) => {
     }
   };
 
+  const handleClick = () => {
+    if (isClickable) {
+      router.push(`/dashboard/lesson/${lesson.id}`);
+    }
+  };
+
   const cardClasses = `
     bg-white rounded-xl shadow-sm border border-gray-200 p-6
     ${isClickable ? 'cursor-pointer hover:border-[#396afc] hover:shadow-md transition-all duration-200' : 'opacity-75'}
   `;
 
   return (
-    <div className={cardClasses} onClick={() => isClickable && console.log(`Navigate to lesson ${lesson.id}`)}>
+    <div className={cardClasses} onClick={handleClick}>
       <div className="flex items-start justify-between mb-4">
         <div>
           <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">

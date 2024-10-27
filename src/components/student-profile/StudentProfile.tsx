@@ -1,25 +1,74 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, GraduationCap } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import LessonTimeline from './LessonTimeline';
 import StudentInfo from './StudentInfo';
+import { useAuth } from '@/hooks/useAuth';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+
+interface Student {
+  id: string;
+  firstName: string;
+  lastName: string;
+  country: string;
+  language: string;
+  level: string;
+  createdAt: string;
+  completedLessons: number;
+  startDate: string;
+}
 
 interface StudentProfileProps {
-  student: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    country: string;
-    language: string;
-    level: string;
-    startDate: string;
-    totalLessons: number;
-    completedLessons: number;
-  };
+  studentId: string;
   onBack: () => void;
 }
 
-const StudentProfile = ({ student, onBack }: StudentProfileProps) => {
+const StudentProfile = ({ studentId, onBack }: StudentProfileProps) => {
+  const [student, setStudent] = useState<Student | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchStudent = async () => {
+      try {
+        const token = await user?.getIdToken();
+        const response = await fetch(`/api/students/${studentId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch student');
+        }
+
+        const data = await response.json();
+        // Ensure completedLessons has a default value
+        setStudent({
+          ...data.student,
+          completedLessons: data.student.completedLessons || 0,
+          startDate: data.student.startDate || data.student.createdAt // fallback to createdAt if startDate isn't set
+        });
+      } catch (error) {
+        console.error('Error fetching student:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user && studentId) {
+      fetchStudent();
+    }
+  }, [studentId, user]);
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  if (!student) {
+    return <div>Student not found</div>;
+  }
+
   return (
     <div className="p-8">
       {/* Header with back button */}
@@ -54,10 +103,12 @@ const StudentProfile = ({ student, onBack }: StudentProfileProps) => {
           <div className="p-4 bg-blue-50 rounded-xl">
             <div className="text-sm text-[#396afc] mb-1">Learning Since</div>
             <div className="text-2xl font-bold text-gray-900">
-              {new Date(student.startDate).toLocaleDateString('en-US', { 
-                month: 'long', 
-                year: 'numeric' 
-              })}
+              {student.startDate 
+                ? new Date(student.startDate).toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    year: 'numeric' 
+                  })
+                : 'Not available'}
             </div>
           </div>
         </div>

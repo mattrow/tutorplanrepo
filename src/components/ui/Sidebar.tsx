@@ -7,11 +7,12 @@ import {
   Settings
 } from "lucide-react"
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Logo from './Logo'
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
 
   const isActiveLink = (path: string) => {
     return pathname === path ? 'bg-white/10' : ''
@@ -21,14 +22,20 @@ export default function Sidebar() {
     <div className="w-64 bg-gradient-to-b from-[#396afc] to-[#2948ff] h-screen fixed left-0 top-0 text-white flex flex-col">
       {/* Logo Area */}
       <div className="p-6 flex justify-center">
-        <Link href="/dashboard">
+        <a 
+          href="https://tutorplan.co" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="hover:opacity-90 transition-opacity"
+        >
           <Logo />
-        </Link>
+        </a>
       </div>
 
       {/* Add Student Button */}
       <div className="px-4 mb-8">
         <Button 
+          onClick={() => router.push('/dashboard/add-student')}
           className="w-full bg-white text-[#396afc] hover:bg-white/90 font-satoshi-bold rounded-full flex items-center justify-center gap-2"
         >
           <UserPlus className="w-4 h-4" />

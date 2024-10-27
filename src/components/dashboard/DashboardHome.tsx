@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { ChevronRight, Plus } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/hooks/useAuth';
-import StudentProfile from '../student-profile/StudentProfile';
+import { useRouter } from 'next/navigation';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 interface Student {
   id: string;
@@ -29,9 +30,9 @@ const languageFlags: Record<string, string> = {
 
 export default function DashboardHome({ onAddStudent }: { onAddStudent: () => void }) {
   const { user } = useAuth();
+  const router = useRouter();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -61,29 +62,12 @@ export default function DashboardHome({ onAddStudent }: { onAddStudent: () => vo
     }
   }, [user]);
 
-  if (loading) {
-    return (
-      <div className="p-8 bg-[#f8f9fc] flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#396afc]"></div>
-      </div>
-    );
-  }
+  const handleStudentClick = (student: Student) => {
+    router.push(`/dashboard/student/${student.id}`);
+  };
 
-  // If a student is selected, show their profile
-  if (selectedStudent) {
-    return (
-      <div className="bg-[#f8f9fc]">
-        <StudentProfile 
-          student={{
-            ...selectedStudent,
-            startDate: selectedStudent.createdAt, // Use creation date as start date
-            totalLessons: 8, // Placeholder
-            completedLessons: 3, // Placeholder
-          }}
-          onBack={() => setSelectedStudent(null)}
-        />
-      </div>
-    );
+  if (loading) {
+    return <LoadingSpinner />;
   }
 
   return (
@@ -106,7 +90,7 @@ export default function DashboardHome({ onAddStudent }: { onAddStudent: () => vo
           {students.map((student, index) => (
             <div
               key={student.id}
-              onClick={() => setSelectedStudent(student)}
+              onClick={() => handleStudentClick(student)}
               className={`flex items-center justify-between p-6 hover:bg-gray-50 transition-colors duration-150 cursor-pointer ${
                 index !== students.length - 1 ? 'border-b border-gray-200' : ''
               }`}
