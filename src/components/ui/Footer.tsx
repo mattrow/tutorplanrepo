@@ -1,7 +1,11 @@
 import Logo from './Logo'
 import Link from 'next/link'
+import { auth } from '@/firebase/config'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function Footer() {
+  const { user } = useAuth();
+
   return (
     <footer className="bg-gray-900 text-gray-300 py-12">
       <div className="container mx-auto px-6">
@@ -34,6 +38,16 @@ export default function Footer() {
               <li><Link href="#help" className="hover:text-white transition-colors">Help Center</Link></li>
               <li><Link href="#contact" className="hover:text-white transition-colors">Contact</Link></li>
               <li><Link href="#privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+              {user && (
+                <li>
+                  <button
+                    onClick={() => auth.signOut()}
+                    className="text-red-400 hover:text-red-300 transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                </li>
+              )}
             </ul>
           </div>
         </div>

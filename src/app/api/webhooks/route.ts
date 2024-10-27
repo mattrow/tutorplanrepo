@@ -1,121 +1,106 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { stripe } from '../../../stripe/config';
-import { Readable } from 'stream';
+import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
+import { stripe } from '@/stripe/config';
+import { firestore as db } from '@/firebase/admin'; // Changed from db to firestore
 
-import { getFirestore } from 'firebase-admin/firestore';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
+export async function POST(req: Request) {
+  const body = await req.text();
+  const sig = headers().get('stripe-signature');
 
-// Initialize Firebase Admin
-if (!getApps().length) {
-  initializeApp({
-    credential: cert({
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
-  });
-}
-
-const adminDb = getFirestore();
-
-// Remove the deprecated config export and use the new route segment config
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-
-async function buffer(readable: Readable) {
-  const chunks = [];
-  for await (const chunk of readable) {
-    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
-  }
-  return Buffer.concat(chunks);
-}
-
-export async function POST(req: NextRequest) {
-  if (req.method !== 'POST') {
-    return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
-  }
-
-  const buf = await buffer(req.body as unknown as Readable);
-  const sig = req.headers.get('stripe-signature');
-
-  if (!sig) {
-    return NextResponse.json({ error: 'No signature' }, { status: 400 });
-  }
+  console.log('🎯 Webhook received');
+  console.log('Signature:', sig?.slice(0, 20) + '...');
 
   try {
-    const event = stripe.webhooks.constructEvent(buf, sig, process.env.STRIPE_WEBHOOK_SECRET!);
+    const event = stripe.webhooks.constructEvent(
+      body,
+      sig!,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
 
-    // Handle the event
+    console.log('✅ Webhook verified, Event Type:', event.type);
+
     switch (event.type) {
       case 'checkout.session.completed':
-        // We'll keep this event for any non-subscription related checkout completions
-        console.log('Checkout session completed');
-        break;
-      case 'customer.subscription.created':
-        const newSubscription = event.data.object;
-        const newSubscriptionUserId = newSubscription.metadata?.userId;
-        if (newSubscriptionUserId) {
-          const userDoc = adminDb.collection('users').doc(newSubscriptionUserId);
-          await userDoc.set({
-            role: newSubscription.metadata?.role,
-            stripeId: newSubscription.customer,
-            subscriptionId: newSubscription.id,
-            subscriptionStatus: newSubscription.status,
-            subscriptionExpires: newSubscription.current_period_end,
-          }, { merge: true });
-        } else {
-          console.error("User ID is undefined in new subscription event");
-        }
-        break;
-      case 'customer.subscription.updated':
-        const updatedSub = event.data.object;
-        const previousAttributes = event.data.previous_attributes;
+        const session = event.data.object;
+        const userId = session.metadata?.userId;
         
-        if (previousAttributes?.status === 'trialing' && updatedSub.status === 'active') {
-          // Trial successfully converted to paid subscription
-          await adminDb.collection('users').doc(updatedSub.metadata?.userId).set({
-            subscriptionStatus: 'active',
-            trialConverted: true,
-            paidSubscriptionStart: new Date(updatedSub.current_period_start * 1000),
-          }, { merge: true });
-        }
-        break;
-      case 'customer.subscription.deleted':
-        const subscription = event.data.object;
-        const subscriptionUserId = subscription.metadata?.userId;
-        if (subscriptionUserId) {
-          const userDoc = adminDb.collection('users').doc(subscriptionUserId);
-          await userDoc.set({
-            subscriptionStatus: subscription.status,
-            subscriptionExpires: subscription.current_period_end,
-          }, { merge: true });
-        } else {
-          console.error("User ID is undefined in subscription event");
-        }
-        break;
-      case 'customer.subscription.trial_will_end':
-        const trialEndingSub = event.data.object;
-        const trialEndingUserId = trialEndingSub.metadata?.userId;
-        
-        if (trialEndingUserId) {
-          // Send notification that trial is ending soon
-          await adminDb.collection('notifications').add({
-            userId: trialEndingUserId,
-            type: 'trial_ending',
-            message: 'Your trial period will end in 3 days',
-            createdAt: new Date(),
+        console.log('💳 Processing checkout session:', {
+          sessionId: session.id,
+          userId,
+          metadata: session.metadata,
+        });
+
+        try {
+          const subscription = await stripe.subscriptions.retrieve(
+            session.subscription as string
+          );
+          
+          console.log('📦 Retrieved subscription:', {
+            id: subscription.id,
+            status: subscription.status,
           });
+
+          if (userId) {
+            const userRef = db.collection('users').doc(userId);
+            const userDoc = await userRef.get();
+            
+            if (!userDoc.exists) {
+              console.error('❌ User document not found:', userId);
+              return;
+            }
+
+            await userRef.update({
+              role: 'Pro User',
+              stripeId: session.customer as string,
+              subscriptionId: session.subscription as string,
+              subscriptionStatus: subscription.status,
+              updatedAt: new Date().toISOString(),
+            });
+            
+            console.log('✅ Updated user document:', userId);
+          }
+        } catch (error) {
+          console.error('❌ Error processing checkout:', error);
         }
         break;
-      default:
-        console.log(`Unhandled event type ${event.type}`);
+
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted':
+        const updatedSubscription = event.data.object;
+        const customerId = updatedSubscription.customer as string;
+        
+        // Find user by stripeId
+        const userSnapshot = await db
+          .collection('users')
+          .where('stripeId', '==', customerId)
+          .get();
+
+        if (!userSnapshot.empty) {
+          const userDoc = userSnapshot.docs[0];
+          await userDoc.ref.update({
+            subscriptionStatus: updatedSubscription.status,
+            updatedAt: new Date().toISOString(),
+            // If subscription is deleted, reset role
+            ...(event.type === 'customer.subscription.deleted' && {
+              role: 'Free User',
+              subscriptionId: null,
+            }),
+          });
+          
+          console.log('Updated subscription status for user:', userDoc.id);
+        }
+        break;
     }
 
-    return NextResponse.json({ received: true });
+    return NextResponse.json({ 
+      received: true,
+      type: event.type,
+      eventId: event.id 
+    });
   } catch (err) {
-    console.error(`Webhook Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    console.error('🚨 Webhook Error:', err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'An error occurred' },
+      { error: 'Webhook handler failed' },
       { status: 400 }
     );
   }
