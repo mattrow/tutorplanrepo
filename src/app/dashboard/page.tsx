@@ -11,14 +11,20 @@ import Link from 'next/link'
 import Navigation from '@/components/ui/Navigation'
 import Pricing from '@/components/Pricing';
 import Footer from '@/components/ui/Footer';
+import Sidebar from '@/components/ui/Sidebar'
+import DashboardHome from '@/components/dashboard/DashboardHome';
+import AddStudentForm from '@/components/dashboard/AddStudentForm';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string);
 
 export default function Dashboard() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [role, setRole] = useState<string | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [dataFetched, setDataFetched] = useState(false); // Add this line
+  const [currentView, setCurrentView] = useState('home'); // Add this
+
   const router = useRouter();
 
   const getFirebaseToken = async () => {
@@ -96,6 +102,7 @@ export default function Dashboard() {
   }, [user]);
 
   const fetchUserData = async () => {
+    setIsLoading(true);
     console.log('🔄 Starting fetchUserData');
     try {
       if (!user) {
@@ -109,7 +116,6 @@ export default function Dashboard() {
         return;
       }
 
-      // Add this check
       console.log('📡 Checking user data directly...');
       const checkRes = await fetch('/api/user/check', {
         headers: { 
@@ -125,58 +131,47 @@ export default function Dashboard() {
       const checkData = await checkRes.json();
       console.log('📊 User data:', checkData);
 
-      // Update state based on user data
       setRole(checkData.userData?.role || 'Free User');
       setSubscriptionStatus(checkData.userData?.subscriptionStatus || null);
+      setDataFetched(true); // Add this line
 
     } catch (error) {
       console.error('❌ Error in fetchUserData:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  if (loading || (!user && typeof window !== 'undefined')) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-[#FFFFFF]">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-[#396afc]"></div>
-      </div>
-    );
-  }
+  // Create a loading component
+  const LoadingSpinner = () => (
+    <div className="flex-grow flex items-center justify-center">
+      <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-white"></div>
+    </div>
+  );
 
+  const renderDashboardContent = () => {
+    switch (currentView) {
+      case 'add-student':
+        return <AddStudentForm onBack={() => setCurrentView('home')} />;
+      default:
+        return <DashboardHome onAddStudent={() => setCurrentView('add-student')} />;
+    }
+  };
+
+  // Modify the render logic
   const renderContent = () => {
+    if (authLoading || isLoading || !dataFetched) {
+      return <LoadingSpinner />;
+    }
+
     if (subscriptionStatus === 'active' || role === 'Pro User') {
       return (
-        <Card className="w-full max-w-md bg-[#FFE5E5] border-none">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">Welcome to your dashboard</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-center">{user?.email}</p>
-            <div className="flex flex-col space-y-4">
-              <Button
-                onClick={() => auth.signOut()}
-                className="bg-[#FF6F61] text-white hover:bg-[#FFB3B0]"
-              >
-                Sign Out
-              </Button>
-              {role === 'Free User' ? (
-                <Button
-                  onClick={() => handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRICE_ID as string)}
-                  className="bg-[#FF6F61] text-white hover:bg-[#FFB3B0]"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Loading...' : 'Upgrade Account'}
-                </Button>
-              ) : (
-                <Button
-                  className="bg-[#FFB3B0] text-[#333333] cursor-not-allowed"
-                  disabled
-                >
-                  You are already "{role}"
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex">
+          <Sidebar />
+          <div className="ml-64 w-full">
+            {renderDashboardContent()}
+          </div>
+        </div>
       );
     }
 
@@ -191,13 +186,12 @@ export default function Dashboard() {
     );
   };
 
+  // Always render the layout, only content changes
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#396afc] to-[#2948ff] text-white flex flex-col">
-      <Navigation isAuthenticated={true} />
-      <main className="flex-grow flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-[#f8f9fc] flex flex-col"> {/* Changed to soft blue-gray */}
+      <main className="flex-grow">
         {renderContent()}
       </main>
-      <Footer />
     </div>
   );
 }
