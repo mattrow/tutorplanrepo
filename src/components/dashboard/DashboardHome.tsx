@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ChevronRight, Plus } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/hooks/useAuth';
+import StudentProfile from '../student-profile/StudentProfile';
 
 interface Student {
   id: string;
@@ -30,6 +31,7 @@ export default function DashboardHome({ onAddStudent }: { onAddStudent: () => vo
   const { user } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -67,6 +69,23 @@ export default function DashboardHome({ onAddStudent }: { onAddStudent: () => vo
     );
   }
 
+  // If a student is selected, show their profile
+  if (selectedStudent) {
+    return (
+      <div className="bg-[#f8f9fc]">
+        <StudentProfile 
+          student={{
+            ...selectedStudent,
+            startDate: selectedStudent.createdAt, // Use creation date as start date
+            totalLessons: 8, // Placeholder
+            completedLessons: 3, // Placeholder
+          }}
+          onBack={() => setSelectedStudent(null)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="p-8 bg-[#f8f9fc]">
       {/* Header */}
@@ -87,6 +106,7 @@ export default function DashboardHome({ onAddStudent }: { onAddStudent: () => vo
           {students.map((student, index) => (
             <div
               key={student.id}
+              onClick={() => setSelectedStudent(student)}
               className={`flex items-center justify-between p-6 hover:bg-gray-50 transition-colors duration-150 cursor-pointer ${
                 index !== students.length - 1 ? 'border-b border-gray-200' : ''
               }`}
