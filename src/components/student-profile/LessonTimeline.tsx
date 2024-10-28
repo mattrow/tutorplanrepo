@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+'use client';
+
+import React, { useEffect, useState, useRef } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -10,7 +12,7 @@ import {
   DragOverlay,
   DragOverEvent,
   UniqueIdentifier,
-  pointerWithin, // Import pointerWithin
+  pointerWithin,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -22,6 +24,8 @@ import TopicItem from './TopicItem';
 import { useAuth } from '@/hooks/useAuth';
 import { Lesson } from '@/types/lesson';
 import LoadingSpinner from '../ui/LoadingSpinner';
+import { useRouter, usePathname } from 'next/navigation';
+import { Button } from '@/components/ui/button'; // Ensure you have a Button component
 
 const LessonTimeline = ({ studentId }: { studentId: string }) => {
   const { user } = useAuth();
@@ -29,6 +33,13 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [activeTopic, setActiveTopic] = useState<any>(null);
+  const [hasChanges, setHasChanges] = useState(false);
+  const initialLessonsRef = useRef<Lesson[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const [previousPathname, setPreviousPathname] = useState(pathname);
 
   const sensors = useSensors(
     useSensor(PointerSensor)
@@ -37,6 +48,22 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
   useEffect(() => {
     fetchLessonPlan();
   }, []);
+
+  useEffect(() => {
+    if (pathname !== previousPathname) {
+      if (hasChanges) {
+        const confirmLeave = confirm('You have unsaved changes. Do you really want to leave?');
+        if (!confirmLeave) {
+          // Navigate back to previous path
+          router.replace(previousPathname);
+        } else {
+          setPreviousPathname(pathname);
+        }
+      } else {
+        setPreviousPathname(pathname);
+      }
+    }
+  }, [pathname]);
 
   const fetchLessonPlan = async () => {
     try {
@@ -53,6 +80,7 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
 
       const data = await response.json();
       setLessons(data.lessons);
+      initialLessonsRef.current = data.lessons;
       setLoading(false);
     } catch (error) {
       console.error('Error fetching lesson plan:', error);
@@ -63,7 +91,7 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
     if (lessons.some((lesson) => lesson.id === id)) {
       return id; // The id corresponds to a lesson
     }
-    
+
     for (const lesson of lessons) {
       if (lesson.topics.some((topic) => topic.id === id)) {
         return lesson.id;
@@ -137,10 +165,11 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
 
         return newLessons;
       });
+      setHasChanges(true); // Indicate that there are unsaved changes
     }
   };
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     setActiveId(null);
@@ -169,13 +198,19 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
           };
           return newLessons;
         });
+        setHasChanges(true); // Indicate that there are unsaved changes
       }
     } else {
       // Moving to a different lesson
-      // (No changes needed; state was updated during handleDragOver)
+      // State was updated during handleDragOver
+      setHasChanges(true); // Indicate that there are unsaved changes
     }
 
-    // Update backend
+    // Remove the backend update from here
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
     try {
       const token = await user?.getIdToken();
       await fetch(`/api/students/${studentId}/update-topic-order`, {
@@ -186,53 +221,125 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
         },
         body: JSON.stringify({ lessons }),
       });
+      setHasChanges(false); // Reset unsaved changes indicator
+      initialLessonsRef.current = lessons;
     } catch (error) {
       console.error('Error updating topic order:', error);
-      // Optionally refresh the original data
-      fetchLessonPlan();
+      // Optionally show an error message to the user
+    } finally {
+      setIsSaving(false);
     }
   };
+
+  const handleCancel = () => {
+    // Reset lessons to the initial state
+    setLessons(initialLessonsRef.current);
+    setHasChanges(false);
+  };
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (hasChanges) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasChanges]);
 
   if (loading) {
     return <LoadingSpinner />;
   }
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={pointerWithin} // Use pointerWithin here
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="mt-8 space-y-4">
-        {lessons.map((lesson) => (
-          <SortableContext
-            key={lesson.id}
-            id={lesson.id}
-            items={lesson.topics.map((topic) => topic.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <LessonCard
-              lesson={lesson}
-              isClickable={
-                lesson.status === 'completed' ||
-                (lesson.status === 'upcoming' &&
-                  lessons.filter((l) => l.status === 'upcoming')[0].id === lesson.id)
-              }
+    <>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={pointerWithin}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="mt-8 space-y-4">
+          {lessons.map((lesson) => (
+            <SortableContext
+              key={lesson.id}
+              id={lesson.id}
+              items={lesson.topics.map((topic) => topic.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <LessonCard
+                lesson={lesson}
+                isClickable={
+                  lesson.status === 'completed' ||
+                  (lesson.status === 'upcoming' &&
+                    lessons.filter((l) => l.status === 'upcoming')[0].id === lesson.id)
+                }
+              />
+            </SortableContext>
+          ))}
+        </div>
+        <DragOverlay>
+          {activeTopic && activeId ? (
+            <TopicItem
+              topic={activeTopic}
+              lessonId={findContainer(activeId) as UniqueIdentifier}
             />
-          </SortableContext>
-        ))}
-      </div>
-      <DragOverlay>
-        {activeTopic && activeId ? (
-          <TopicItem
-            topic={activeTopic}
-            lessonId={findContainer(activeId) as UniqueIdentifier}
-          />
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+
+      {hasChanges && (
+        <div className="fixed bottom-8 right-8 flex gap-4 animate-fade-in">
+          <Button
+            onClick={handleCancel}
+            className="font-satoshi-bold bg-white text-md text-[#396afc] hover:bg-white/90 hover:scale-105 transition-transform duration-300 ease-out rounded-full px-8 py-5 flex items-center gap-2"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            className={`font-satoshi-bold bg-blue-600 text-white text-md hover:bg-blue-700 hover:scale-105 transition-transform duration-300 ease-out rounded-full px-8 py-5 flex items-center gap-2 ${
+              isSaving ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <>
+                <svg
+                  className="w-5 h-5 animate-spin text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8H4z"
+                  ></path>
+                </svg>
+                Saving...
+              </>
+            ) : (
+              'Save Changes'
+            )}
+          </Button>
+        </div>
+      )}
+    </>
   );
 };
 
