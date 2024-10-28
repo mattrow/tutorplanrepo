@@ -50,7 +50,7 @@ const TopicItem = ({ topic, lessonId }: TopicItemProps) => {
         {...attributes}
         className="cursor-grab active:cursor-grabbing"
       >
-        <Bars3Icon className="w-5 h-5 text-gray-400" />
+        <Bars3Icon className="w-5 h-5 text-g    ray-400" />
       </div>
       <div>
         <span>{topic.topicName}</span>

@@ -10,6 +10,7 @@ import {
   DragOverlay,
   DragOverEvent,
   UniqueIdentifier,
+  pointerWithin, // Import pointerWithin
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -58,11 +59,12 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
     }
   };
 
-  const findContainer = (id: UniqueIdentifier) => {
+  const findContainer = (id: UniqueIdentifier): UniqueIdentifier | null => {
+    if (lessons.some((lesson) => lesson.id === id)) {
+      return id; // The id corresponds to a lesson
+    }
+    
     for (const lesson of lessons) {
-      if (id === lesson.id) {
-        return lesson.id;
-      }
       if (lesson.topics.some((topic) => topic.id === id)) {
         return lesson.id;
       }
@@ -90,41 +92,52 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
     const activeContainer = findContainer(active.id);
     const overContainer = findContainer(over.id);
 
-    if (!activeContainer || !overContainer || activeContainer === overContainer) {
-      return;
+    if (!activeContainer || !overContainer) return;
+
+    if (activeContainer !== overContainer) {
+      setLessons((prevLessons) => {
+        const activeLessonIndex = prevLessons.findIndex(
+          (lesson) => lesson.id === activeContainer
+        );
+        const overLessonIndex = prevLessons.findIndex(
+          (lesson) => lesson.id === overContainer
+        );
+
+        if (activeLessonIndex === -1 || overLessonIndex === -1) return prevLessons;
+
+        const activeLesson = prevLessons[activeLessonIndex];
+        const overLesson = prevLessons[overLessonIndex];
+
+        const activeTopicIndex = activeLesson.topics.findIndex(
+          (topic) => topic.id === active.id
+        );
+
+        if (activeTopicIndex === -1) return prevLessons;
+
+        const activeTopic = activeLesson.topics[activeTopicIndex];
+
+        const newActiveTopics = activeLesson.topics.filter(
+          (topic) => topic.id !== active.id
+        );
+        const newOverTopics = [...overLesson.topics];
+
+        // Determine where to insert in the over lesson
+        let overIndex = overLesson.topics.findIndex((topic) => topic.id === over.id);
+
+        if (overIndex === -1) {
+          // If over.id is the container id or topic not found, insert at the end
+          overIndex = newOverTopics.length;
+        }
+
+        newOverTopics.splice(overIndex, 0, activeTopic);
+
+        const newLessons = [...prevLessons];
+        newLessons[activeLessonIndex] = { ...activeLesson, topics: newActiveTopics };
+        newLessons[overLessonIndex] = { ...overLesson, topics: newOverTopics };
+
+        return newLessons;
+      });
     }
-
-    setLessons((prevLessons) => {
-      const sourceLessonIndex = prevLessons.findIndex((lesson) => lesson.id === activeContainer);
-      const destinationLessonIndex = prevLessons.findIndex((lesson) => lesson.id === overContainer);
-
-      if (sourceLessonIndex === -1 || destinationLessonIndex === -1) return prevLessons;
-
-      const sourceLesson = prevLessons[sourceLessonIndex];
-      const destinationLesson = prevLessons[destinationLessonIndex];
-
-      const activeIndex = sourceLesson.topics.findIndex((topic) => topic.id === active.id);
-
-      if (activeIndex === -1) return prevLessons;
-
-      const newSourceTopics = [...sourceLesson.topics];
-      const [movedTopic] = newSourceTopics.splice(activeIndex, 1);
-
-      const newDestinationTopics = [...destinationLesson.topics];
-      newDestinationTopics.push(movedTopic);
-
-      const newLessons = [...prevLessons];
-      newLessons[sourceLessonIndex] = {
-        ...sourceLesson,
-        topics: newSourceTopics,
-      };
-      newLessons[destinationLessonIndex] = {
-        ...destinationLesson,
-        topics: newDestinationTopics,
-      };
-
-      return newLessons;
-    });
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -157,6 +170,9 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
           return newLessons;
         });
       }
+    } else {
+      // Moving to a different lesson
+      // (No changes needed; state was updated during handleDragOver)
     }
 
     // Update backend
@@ -184,7 +200,7 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={pointerWithin} // Use pointerWithin here
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
@@ -209,10 +225,10 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
         ))}
       </div>
       <DragOverlay>
-        {activeTopic ? (
+        {activeTopic && activeId ? (
           <TopicItem
             topic={activeTopic}
-            lessonId={findContainer(activeId!)}
+            lessonId={findContainer(activeId) as UniqueIdentifier}
           />
         ) : null}
       </DragOverlay>
