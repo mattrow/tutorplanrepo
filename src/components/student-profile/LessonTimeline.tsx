@@ -1,6 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import {
+  DndContext,
+  DragEndEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCorners,
+  DragStartEvent,
+  DragOverlay,
+  DragOverEvent,
+  UniqueIdentifier,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable';
 import LessonCard from './LessonCard';
+import TopicItem from './TopicItem';
 import { useAuth } from '@/hooks/useAuth';
 import { Lesson } from '@/types/lesson';
 import LoadingSpinner from '../ui/LoadingSpinner';
@@ -9,6 +26,8 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
   const { user } = useAuth();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
+  const [activeTopic, setActiveTopic] = useState<any>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor)
@@ -39,47 +58,108 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
     }
   };
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const findContainer = (id: UniqueIdentifier) => {
+    for (const lesson of lessons) {
+      if (id === lesson.id) {
+        return lesson.id;
+      }
+      if (lesson.topics.some((topic) => topic.id === id)) {
+        return lesson.id;
+      }
+    }
+    return null;
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    setActiveId(active.id);
+
+    const activeLessonId = findContainer(active.id);
+    if (activeLessonId) {
+      const lesson = lessons.find((l) => l.id === activeLessonId);
+      const topic = lesson?.topics.find((t) => t.id === active.id);
+      setActiveTopic(topic);
+    }
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
 
     if (!over) return;
 
-    const activeData = active.data.current;
-    const overData = over.data.current;
+    const activeContainer = findContainer(active.id);
+    const overContainer = findContainer(over.id);
 
-    if (!activeData || activeData.type !== 'topic') return; // We're only handling topics
-    if (!overData || overData.type !== 'lesson') return; // We're only dropping onto lessons
+    if (!activeContainer || !overContainer || activeContainer === overContainer) {
+      return;
+    }
 
-    const activeLessonId = activeData.lessonId;
-    const activeTopicId = activeData.topicId;
-    const overLessonId = overData.lessonId;
+    setLessons((prevLessons) => {
+      const sourceLessonIndex = prevLessons.findIndex((lesson) => lesson.id === activeContainer);
+      const destinationLessonIndex = prevLessons.findIndex((lesson) => lesson.id === overContainer);
 
-    if (activeLessonId === overLessonId) return;
+      if (sourceLessonIndex === -1 || destinationLessonIndex === -1) return prevLessons;
 
-    // Find source and destination lessons
-    const sourceLessonIndex = lessons.findIndex(lesson => lesson.id === activeLessonId);
-    const destinationLessonIndex = lessons.findIndex(lesson => lesson.id === overLessonId);
+      const sourceLesson = prevLessons[sourceLessonIndex];
+      const destinationLesson = prevLessons[destinationLessonIndex];
 
-    if (sourceLessonIndex === -1 || destinationLessonIndex === -1) return;
+      const activeIndex = sourceLesson.topics.findIndex((topic) => topic.id === active.id);
 
-    const sourceLesson = lessons[sourceLessonIndex];
-    const destinationLesson = lessons[destinationLessonIndex];
+      if (activeIndex === -1) return prevLessons;
 
-    // Find the topic in the source lesson
-    const topicIndex = sourceLesson.topics.findIndex(topic => topic.id === activeTopicId);
+      const newSourceTopics = [...sourceLesson.topics];
+      const [movedTopic] = newSourceTopics.splice(activeIndex, 1);
 
-    if (topicIndex === -1) return;
+      const newDestinationTopics = [...destinationLesson.topics];
+      newDestinationTopics.push(movedTopic);
 
-    // Remove topic from source lesson
-    const [movedTopic] = sourceLesson.topics.splice(topicIndex, 1);
+      const newLessons = [...prevLessons];
+      newLessons[sourceLessonIndex] = {
+        ...sourceLesson,
+        topics: newSourceTopics,
+      };
+      newLessons[destinationLessonIndex] = {
+        ...destinationLesson,
+        topics: newDestinationTopics,
+      };
 
-    // Add topic to destination lesson
-    destinationLesson.topics.push(movedTopic);
+      return newLessons;
+    });
+  };
 
-    // Update state
-    setLessons([...lessons]);
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
 
-    // Update the backend
+    setActiveId(null);
+    setActiveTopic(null);
+
+    if (!over) return;
+
+    const activeContainer = findContainer(active.id);
+    const overContainer = findContainer(over.id);
+
+    if (!activeContainer || !overContainer) return;
+
+    if (activeContainer === overContainer) {
+      const lessonIndex = lessons.findIndex((lesson) => lesson.id === activeContainer);
+      const lesson = lessons[lessonIndex];
+      const activeIndex = lesson.topics.findIndex((topic) => topic.id === active.id);
+      const overIndex = lesson.topics.findIndex((topic) => topic.id === over.id);
+
+      if (activeIndex !== overIndex) {
+        setLessons((prevLessons) => {
+          const newTopics = arrayMove(lesson.topics, activeIndex, overIndex);
+          const newLessons = [...prevLessons];
+          newLessons[lessonIndex] = {
+            ...lesson,
+            topics: newTopics,
+          };
+          return newLessons;
+        });
+      }
+    }
+
+    // Update backend
     try {
       const token = await user?.getIdToken();
       await fetch(`/api/students/${studentId}/update-topic-order`, {
@@ -102,22 +182,40 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
   }
 
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <div className="mt-8">
-        <div className="space-y-4">
-          {lessons.map((lesson) => (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCorners}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="mt-8 space-y-4">
+        {lessons.map((lesson) => (
+          <SortableContext
+            key={lesson.id}
+            id={lesson.id}
+            items={lesson.topics.map((topic) => topic.id)}
+            strategy={verticalListSortingStrategy}
+          >
             <LessonCard
-              key={lesson.id}
               lesson={lesson}
               isClickable={
                 lesson.status === 'completed' ||
                 (lesson.status === 'upcoming' &&
-                  lessons.filter(l => l.status === 'upcoming')[0].id === lesson.id)
+                  lessons.filter((l) => l.status === 'upcoming')[0].id === lesson.id)
               }
             />
-          ))}
-        </div>
+          </SortableContext>
+        ))}
       </div>
+      <DragOverlay>
+        {activeTopic ? (
+          <TopicItem
+            topic={activeTopic}
+            lessonId={findContainer(activeId!)}
+          />
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 };
