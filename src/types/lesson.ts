@@ -1,9 +1,10 @@
 export interface Topic {
     id: string;
     topicName: string;
-    topicDescription?: string;
+    topicDescription: string;
     order: number;
-    status?: string;
+    status: 'not started' | 'in progress' | 'completed';
+    isUserAdded?: boolean;
   }
   
   export interface Lesson {

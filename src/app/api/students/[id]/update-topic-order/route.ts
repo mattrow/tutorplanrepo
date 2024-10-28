@@ -45,20 +45,32 @@ export async function POST(
 
     const { lessons } = await request.json();
 
-    // Flatten the topics and update their orders
-    const updatedTopics = lessons.flatMap((lesson: any, lessonIndex: number) =>
-      lesson.topics.map((topic: any, topicIndex: number) => ({
-        id: topic.id, // Include the ID
-        topicName: topic.topicName,
-        topicDescription: topic.topicDescription,
-        order: lessonIndex * 2 + topicIndex + 1, // Recalculate order
-        status: topic.status,
-      }))
-    );
+    const existingTopics = levelData.topics;
 
-    // Update the topics in Firestore
+    const updatedTopics = existingTopics.map((curriculumTopic: any) => {
+      const updatedTopic = lessons
+        .flatMap((lesson: any) => lesson.topics)
+        .find((topic: any) => topic.id === curriculumTopic.id);
+
+      if (updatedTopic) {
+        return {
+          ...curriculumTopic,
+          order: updatedTopic.order,
+          status: updatedTopic.status,
+        };
+      }
+
+      return curriculumTopic;
+    });
+
+    const userAddedTopics = lessons
+      .flatMap((lesson: any) => lesson.topics)
+      .filter((topic: any) => topic.isUserAdded);
+
+    const allTopics = [...updatedTopics, ...userAddedTopics];
+
     await levelRef.update({
-      topics: updatedTopics,
+      topics: allTopics,
     });
 
     return NextResponse.json({ success: true });

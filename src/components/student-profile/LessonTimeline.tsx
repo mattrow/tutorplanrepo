@@ -252,6 +252,40 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
     };
   }, [hasChanges]);
 
+  // Add this function
+  const handleAddTopic = (lessonId: string, newTopic: any) => {
+    setLessons((prevLessons) =>
+      prevLessons.map((lesson) =>
+        lesson.id === lessonId
+          ? {
+              ...lesson,
+              topics: [...lesson.topics, newTopic],
+            }
+          : lesson
+      )
+    );
+    setHasChanges(true); // Indicate that there are unsaved changes
+  };
+
+  const handleDeleteTopic = (lessonId: string, topicId: string) => {
+    setLessons((prevLessons) =>
+      prevLessons.map((lesson) => {
+        if (lesson.id === lessonId) {
+          const topicToDelete = lesson.topics.find((topic) => topic.id === topicId);
+          if (topicToDelete && topicToDelete.isUserAdded) {
+            // Only delete if the topic is user-added
+            return {
+              ...lesson,
+              topics: lesson.topics.filter((topic) => topic.id !== topicId),
+            };
+          }
+        }
+        return lesson;
+      })
+    );
+    setHasChanges(true); // Indicate that there are unsaved changes
+  };
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -280,6 +314,8 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
                   (lesson.status === 'upcoming' &&
                     lessons.filter((l) => l.status === 'upcoming')[0].id === lesson.id)
                 }
+                onAddTopic={handleAddTopic}
+                onDeleteTopic={handleDeleteTopic}
               />
             </SortableContext>
           ))}

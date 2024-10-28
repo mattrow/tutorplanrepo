@@ -46,7 +46,9 @@ export async function GET(
     }
 
     // Sort topics by order
-    const sortedTopics = levelData.topics.sort((a: any, b: any) => a.order - b.order);
+    const sortedTopics = levelData.topics
+      .sort((a: any, b: any) => a.order - b.order)
+      .filter((topic: any) => !topic.isDeleted);
 
     // Group topics into lessons with 2 topics each
     const lessons = [];
