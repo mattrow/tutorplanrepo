@@ -151,20 +151,23 @@ const LessonView = ({ lessonId, onClose }: LessonViewProps) => {
 
       {/* Lesson Content */}
       <div className="space-y-6">
-        {lesson.topics.map((topic) => (
-          <TopicProgress 
-            key={topic.id} 
-            topic={topic}
-            onStatusChange={(status) => {
-              // Here you would update the topic status in Firebase
-              console.log(`Topic ${topic.id} status changed to ${status}`);
-            }}
-            onUnderstandingChange={(understanding) => {
-              // Here you would update the understanding level in Firebase
-              console.log(`Topic ${topic.id} understanding changed to ${understanding}`);
-            }}
-          />
-        ))}
+        {lesson.topics.map((topic: Topic) => {
+          console.log('Topic:', topic);
+          return (
+            <TopicProgress 
+              key={topic.id} 
+              topic={topic}
+              onStatusChange={(status) => {
+                // Here you would update the topic status in Firebase
+                console.log(`Topic ${topic.id} status changed to ${status}`);
+              }}
+              onUnderstandingChange={(understanding) => {
+                // Here you would update the understanding level in Firebase
+                console.log(`Topic ${topic.id} understanding changed to ${understanding}`);
+              }}
+            />
+          );
+        })}
       </div>
 
       {/* Teaching Notes */}

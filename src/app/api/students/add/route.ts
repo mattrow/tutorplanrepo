@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       startDate: now,
       createdAt: now,
       updatedAt: now,
-      currentLevel: studentData.level // Store the current level
+      currentLevel: studentData.level, // Store the current level
     };
 
     // Add to Firestore
@@ -46,25 +46,26 @@ export async function POST(req: NextRequest) {
       curriculumData = englishCurriculum[studentData.level];
     }
     // Add more language curriculum conditions here as needed
-    
+
     if (curriculumData) {
       // Create the level document with its topics
       await levelsRef.doc(studentData.level).set({
         topics: curriculumData.map(topic => ({
+          id: `topic-${topic.order}`,
           topicName: topic.topicName,
           topicDescription: topic.topicDescription,
           order: topic.order,
-          status: 'not started'
+          status: 'not started',
         })),
         startDate: now,
         completedTopics: 0,
-        totalTopics: curriculumData.length
+        totalTopics: curriculumData.length,
       });
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      studentId: studentRef.id 
+    return NextResponse.json({
+      success: true,
+      studentId: studentRef.id,
     });
 
   } catch (error) {
