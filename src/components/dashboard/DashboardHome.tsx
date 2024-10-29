@@ -28,6 +28,13 @@ const languageFlags: Record<string, string> = {
   Russian: '🇷🇺',
 };
 
+const getLevelColor = (level: string) => {
+  if (level.startsWith('A')) return 'bg-green-50 text-green-600';
+  if (level.startsWith('B')) return 'bg-blue-50 text-[#396afc]';
+  if (level.startsWith('C')) return 'bg-red-50 text-red-600';
+  return 'bg-gray-50 text-gray-600';
+};
+
 export default function DashboardHome({ onAddStudent }: { onAddStudent: () => void }) {
   const { user } = useAuth();
   const router = useRouter();
@@ -112,7 +119,7 @@ export default function DashboardHome({ onAddStudent }: { onAddStudent: () => vo
                   <span className="text-2xl" role="img" aria-label={`${student.language} flag`}>
                     {languageFlags[student.language]}
                   </span>
-                  <div className="px-3 py-1 rounded-lg bg-blue-50 text-[#396afc] font-medium">
+                  <div className={`px-3 py-1 rounded-lg ${getLevelColor(student.level)} font-medium`}>
                     {student.level}
                   </div>
                 </div>

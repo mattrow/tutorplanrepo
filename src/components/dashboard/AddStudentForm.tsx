@@ -72,9 +72,11 @@ export default function AddStudentForm({ onBack }: { onBack: () => void }) {
     language: '',
     level: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
     try {
       const token = await user?.getIdToken();
@@ -92,12 +94,12 @@ export default function AddStudentForm({ onBack }: { onBack: () => void }) {
         throw new Error('Failed to add student');
       }
 
-      // Success! Go back to dashboard
       onBack();
       
     } catch (error) {
       console.error('Error adding student:', error);
-      // You might want to show an error message to the user here
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -221,10 +223,39 @@ export default function AddStudentForm({ onBack }: { onBack: () => void }) {
 
           <Button
             type="submit"
-            className="w-full bg-[#396afc] text-white hover:bg-[#2948ff] font-satoshi-bold rounded-full flex items-center justify-center gap-2 py-6"
+            disabled={isSubmitting}
+            className="w-full bg-[#396afc] text-white hover:bg-[#396afc]/90 font-satoshi-bold rounded-full flex items-center justify-center gap-2 py-6 disabled:opacity-50"
           >
-            <UserPlus className="w-5 h-5" />
-            Create Student Profile
+            {isSubmitting ? (
+              <>
+                Creating Profile...
+                <svg
+                  className="w-4 h-4 ml-2 animate-spin"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8H4z"
+                  ></path>
+                </svg>
+              </>
+            ) : (
+              <>
+                <UserPlus className="w-5 h-5" />
+                Create Student Profile
+              </>
+            )}
           </Button>
         </form>
       </div>

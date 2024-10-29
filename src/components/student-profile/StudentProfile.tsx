@@ -69,6 +69,13 @@ const StudentProfile = ({ studentId, onBack }: StudentProfileProps) => {
     return <div>Student not found</div>;
   }
 
+  const getLevelColor = (level: string) => {
+    if (level.startsWith('A')) return 'bg-green-50 text-green-600';
+    if (level.startsWith('B')) return 'bg-blue-50 text-[#396afc]';
+    if (level.startsWith('C')) return 'bg-red-50 text-red-600';
+    return 'bg-gray-50 text-gray-600';
+  };
+
   return (
     <div className="p-8">
       {/* Header with back button */}
@@ -98,7 +105,9 @@ const StudentProfile = ({ studentId, onBack }: StudentProfileProps) => {
           </div>
           <div className="p-4 bg-blue-50 rounded-xl">
             <div className="text-sm text-[#396afc] mb-1">Current Level</div>
-            <div className="text-2xl font-bold text-gray-900">{student.level}</div>
+            <div className={`inline-block px-3 py-1 rounded-lg ${getLevelColor(student.level)} text-2xl font-bold`}>
+              {student.level}
+            </div>
           </div>
           <div className="p-4 bg-blue-50 rounded-xl">
             <div className="text-sm text-[#396afc] mb-1">Learning Since</div>
