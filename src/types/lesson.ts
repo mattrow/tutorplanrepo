@@ -8,10 +8,52 @@ export interface Topic {
     isUserAdded: boolean;
   }
   
+  export interface Exercise {
+    id: string;
+    question: string;
+    type: string; // 'multiple-choice', 'fill-in-the-blank', etc.
+    options?: string[];
+    hint?: string;
+  }
+  
+  export interface Example {
+    context?: string;
+    correct: string;
+    incorrect?: string;
+    explanation: string;
+  }
+  
+  export interface VocabularyWord {
+    word: string;
+    translation: string;
+    exampleSentence: string;
+  }
+  
+  export interface Dialogue {
+    role: string;
+    text: string;
+  }
+  
+  export interface Scenario {
+    description: string;
+    steps: string[];
+  }
+  
+  export interface GrammarExample {
+    sentence: string;
+    explanation: string;
+  }
+  
   export interface GeneratedTopic {
     id: string;
     title: string;
-    content: string;
+    introduction: {
+      explanation: string;
+      keyPoints: string[];
+    };
+    inDepth: string; // This will be Markdown-formatted text
+    examples: Example[];
+    exercises: Exercise[];
   }
   
   export interface Lesson {

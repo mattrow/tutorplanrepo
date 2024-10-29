@@ -1,11 +1,11 @@
 import React from 'react';
-import { MapPin, Book } from 'lucide-react';
+import { Globe, Book } from 'lucide-react';
 
 interface StudentInfoProps {
   student: {
     firstName: string;
     lastName: string;
-    country: string;
+    nativeLanguage: string;
     language: string;
     level: string;
   };
@@ -40,8 +40,8 @@ const StudentInfo = ({ student }: StudentInfoProps) => {
           </h1>
           <div className="flex items-center gap-6 text-gray-600">
             <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-[#396afc]" />
-              <span>{student.country}</span>
+              <Globe className="w-4 h-4 text-[#396afc]" />
+              <span>Native Language: {student.nativeLanguage}</span>
             </div>
             <div className="flex items-center gap-2">
               <Book className="w-4 h-4 text-[#396afc]" />

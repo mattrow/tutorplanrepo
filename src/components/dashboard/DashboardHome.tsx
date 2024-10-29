@@ -9,7 +9,7 @@ interface Student {
   id: string;
   firstName: string;
   lastName: string;
-  country: string;
+  nativeLanguage: string;
   language: string;
   level: string;
   createdAt: string;
@@ -103,7 +103,7 @@ export default function DashboardHome({ onAddStudent }: { onAddStudent: () => vo
                   <h3 className="text-lg font-medium text-gray-900">
                     {student.firstName} {student.lastName[0]}.
                   </h3>
-                  <p className="text-sm text-gray-500">{student.country}</p>
+                  <p className="text-sm text-gray-500">Native Language: {student.nativeLanguage}</p>
                 </div>
               </div>
 

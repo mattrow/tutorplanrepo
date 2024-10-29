@@ -49,13 +49,26 @@ const LANGUAGES = [
   'Russian'
 ];
 
+const NATIVE_LANGUAGES = [
+  'English',
+  'Spanish',
+  'French',
+  'German',
+  'Italian',
+  'Portuguese',
+  'Japanese',
+  'Chinese',
+  'Korean',
+  'Russian'
+];
+
 export default function AddStudentForm({ onBack }: { onBack: () => void }) {
   const { user } = useAuth();
   const [selectedLevel, setSelectedLevel] = useState('');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    country: '',
+    nativeLanguage: '',
     language: '',
     level: ''
   });
@@ -141,14 +154,18 @@ export default function AddStudentForm({ onBack }: { onBack: () => void }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
-            <input
-              type="text"
-              name="country"
+            <label className="block text-sm font-medium text-gray-700 mb-2">Native Language</label>
+            <select
+              name="nativeLanguage"
               required
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#396afc] focus:border-[#396afc] text-gray-900"
               onChange={handleChange}
-            />
+            >
+              <option value="">Select a language</option>
+              {NATIVE_LANGUAGES.map(language => (
+                <option key={language} value={language}>{language}</option>
+              ))}
+            </select>
           </div>
 
           <div>
@@ -159,9 +176,9 @@ export default function AddStudentForm({ onBack }: { onBack: () => void }) {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#396afc] focus:border-[#396afc] text-gray-900"
               onChange={handleChange}
             >
-              <option value="" className="bg-[#396afc]">Select a language</option>
+              <option value="">Select a language</option>
               {LANGUAGES.map(language => (
-                <option key={language} value={language} className="bg-[#396afc]">{language}</option>
+                <option key={language} value={language}>{language}</option>
               ))}
             </select>
           </div>

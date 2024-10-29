@@ -10,7 +10,7 @@ interface Student {
   id: string;
   firstName: string;
   lastName: string;
-  country: string;
+  nativeLanguage: string;
   language: string;
   level: string;
   createdAt: string;
@@ -43,11 +43,11 @@ const StudentProfile = ({ studentId, onBack }: StudentProfileProps) => {
         }
 
         const data = await response.json();
-        // Ensure completedLessons has a default value
         setStudent({
           ...data.student,
           completedLessons: data.student.completedLessons || 0,
-          startDate: data.student.startDate || data.student.createdAt // fallback to createdAt if startDate isn't set
+          startDate: data.student.startDate || data.student.createdAt,
+          nativeLanguage: data.student.nativeLanguage || 'Not specified',
         });
       } catch (error) {
         console.error('Error fetching student:', error);

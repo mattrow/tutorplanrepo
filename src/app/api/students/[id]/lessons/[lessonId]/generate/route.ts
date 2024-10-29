@@ -24,6 +24,22 @@ export async function POST(
     // Parse request body
     const { topics } = await request.json();
 
+    // **Fetch student's current level**
+    const studentRef = firestore
+      .collection('users')
+      .doc(userId)
+      .collection('students')
+      .doc(studentId);
+
+    const studentDoc = await studentRef.get();
+
+    if (!studentDoc.exists) {
+      return NextResponse.json({ error: 'Student not found' }, { status: 404 });
+    }
+
+    const studentData = studentDoc.data();
+    const studentLevel = studentData?.level || 'A1'; // Default to 'A1' if level not found
+
     // Initialize OpenAI API
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
@@ -32,18 +48,43 @@ export async function POST(
     const generatedTopics = [];
 
     for (const topic of topics) {
-      // For each topic, generate the lesson content
-      const prompt = `You are an expert language tutor. Generate a detailed online one to one lesson plan for an adult learner for the topic "${topic.topicName}". Provide the following information in JSON format only, with keys exactly as specified:
+      // **Updated OpenAI prompt**
+      const prompt = `You are an expert language tutor specializing in teaching students at the ${studentLevel} level. Generate detailed online one-to-one lesson content for an adult learner on the topic "${topic.topicName}". The lesson should be appropriate for a student at level ${studentLevel}.
+
+Provide the following information in JSON format only, with keys exactly as specified:
 
 {
+  "id": "${topic.id}",
   "title": "Title of the topic",
-  "description": "Brief description of the topic",
-  "teachingTips": "Suggestions on how to teach this topic effectively",
-  "exercises": ["Exercise 1", "Exercise 2", "Exercise 3"]
+  "introduction": {
+    "explanation": "An explanation of the topic suitable for ${studentLevel} level",
+    "keyPoints": ["Key point 1", "Key point 2", "Key point 3"]
+  },
+  "inDepth": "In-depth content to gain a solid understanding of the topic. Include subheadings, bullet points, and break up the text into short paragraphs. Use language appropriate for ${studentLevel} level students.",
+  "examples": [
+    // Provide around 10 examples in the following format
+    {
+      "context": "Optional context or scenario",
+      "correct": "Correct example sentence or usage",
+      "incorrect": "Incorrect example sentence or common mistake",
+      "explanation": "Explanation of why it's correct or incorrect"
+    }
+    // More examples as needed
+  ],
+  "exercises": [
+    // Provide around 10 exercises in the following format
+    {
+      "id": "Unique ID for the exercise",
+      "question": "Exercise question",
+      "type": "multiple-choice", // or "fill-in-the-blank", etc.
+      "options": ["Option 1", "Option 2", "Option 3"], // For multiple-choice questions
+      "hint": "Optional hint for the exercise"
+    }
+    // More exercises as needed
+  ]
 }
 
-Ensure the JSON is properly formatted, uses double quotes for keys and strings, and can be parsed by JSON parsers.
-`;
+Ensure the JSON is properly formatted, uses double quotes for keys and strings, and can be parsed by JSON parsers. Don't include any explanations outside the JSON.`;
 
       const response = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
@@ -68,29 +109,26 @@ Ensure the JSON is properly formatted, uses double quotes for keys and strings, 
       }
 
       generatedTopics.push({
-        id: topic.id,
+        id: parsedContent.id || topic.id,
         title: parsedContent.title || topic.topicName,
-        description: parsedContent.description || '',
-        teachingTips: parsedContent.teachingTips || '',
+        introduction: parsedContent.introduction || {},
+        inDepth: parsedContent.inDepth || '',
+        examples: parsedContent.examples || [],
         exercises: parsedContent.exercises || [],
       });
     }
 
     // Save the generated lesson to Firestore
-    const lessonRef = firestore
-      .collection('users')
-      .doc(userId)
-      .collection('students')
-      .doc(studentId)
+    const lessonRef = studentRef
       .collection('lessons')
       .doc(params.lessonId);
 
     await lessonRef.set(
       {
         generated: true,
-        generatedTopics, // Store the structured generated topics here
+        generatedTopics,
         createdAt: new Date().toISOString(),
-        title: `Lesson ${params.lessonId}`, // You can adjust the title as needed
+        title: `Lesson ${params.lessonId}`,
       },
       { merge: true }
     );

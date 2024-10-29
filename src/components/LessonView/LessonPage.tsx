@@ -4,26 +4,22 @@ import {
   ThumbsUp,
   ThumbsDown,
   BookOpen,
-  Lightbulb,
-  Dumbbell,
-  HomeIcon,
+  ArrowLeft,
   CheckSquare,
-  ArrowLeft
+  HomeIcon,
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useRouter } from 'next/navigation';
+import IntroductionSection from './TopicSections/IntroductionSection';
+import InDepthSection from './TopicSections/InDepthSection';
+import ExamplesSection from './TopicSections/ExamplesSection';
+import ExercisesSection from './TopicSections/ExercisesSection';
+import TopicNavigation from './TopicSections/TopicNavigation';
+import { GeneratedTopic } from '@/types/lesson';
 
 interface TopicStatus {
   completed: boolean;
   understood: boolean | null;
-}
-
-interface GeneratedTopic {
-  id: string;
-  title: string;
-  description: string;
-  teachingTips: string;
-  exercises: string[];
 }
 
 interface LessonPageProps {
@@ -43,6 +39,8 @@ const TopicModule = ({
   status: TopicStatus;
   onStatusChange: (status: Partial<TopicStatus>) => void;
 }) => {
+  const [activeSection, setActiveSection] = useState('introduction');
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
       <div className="flex items-start gap-4">
@@ -58,35 +56,27 @@ const TopicModule = ({
         <div className="flex-1">
           <h3 className="text-xl font-semibold text-gray-900 mb-4">{topic.title}</h3>
 
-          <div className="space-y-6">
-            <div className="flex items-start gap-3">
-              <BookOpen className="w-5 h-5 text-[#396afc] mt-1 flex-shrink-0" />
-              <div>
-                <h4 className="font-medium text-gray-900 mb-1">Description</h4>
-                <p className="text-gray-600">{topic.description}</p>
-              </div>
-            </div>
+          <TopicNavigation
+            activeSection={activeSection}
+            onSectionChange={setActiveSection}
+            topic={topic}
+          />
 
-            <div className="flex items-start gap-3">
-              <Lightbulb className="w-5 h-5 text-[#396afc] mt-1 flex-shrink-0" />
-              <div>
-                <h4 className="font-medium text-gray-900 mb-1">Teaching Tips</h4>
-                <p className="text-gray-600">{topic.teachingTips}</p>
-              </div>
-            </div>
+          {activeSection === 'introduction' && (
+            <IntroductionSection topic={topic} />
+          )}
 
-            <div className="flex items-start gap-3">
-              <Dumbbell className="w-5 h-5 text-[#396afc] mt-1 flex-shrink-0" />
-              <div>
-                <h4 className="font-medium text-gray-900 mb-1">Practice Exercises</h4>
-                <ul className="list-disc list-inside text-gray-600 space-y-2">
-                  {topic.exercises.map((exercise, index) => (
-                    <li key={index}>{exercise}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
+          {activeSection === 'in-depth' && (
+            <InDepthSection content={topic.inDepth} />
+          )}
+
+          {activeSection === 'examples' && (
+            <ExamplesSection examples={topic.examples} />
+          )}
+
+          {activeSection === 'exercises' && (
+            <ExercisesSection exercises={topic.exercises} />
+          )}
 
           {status.completed && (
             <div className="mt-6 flex items-center gap-4 border-t pt-4">
