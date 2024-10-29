@@ -322,6 +322,7 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
                 }
                 onAddTopic={handleAddTopic}
                 onDeleteTopic={handleDeleteTopic}
+                studentId={studentId}
               />
             </SortableContext>
           ))}

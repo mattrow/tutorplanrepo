@@ -73,10 +73,10 @@ const TopicItem = ({ topic, lessonId, onDeleteTopic }: TopicItemProps) => {
         // <Tooltip content="Delete Topic">
           <button
             onClick={handleDelete}
-            className="bg-red-400 hover:bg-red-500 text-white rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+            className="border-2 border-red-400 hover:bg-red-400 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-red-400 group"
             aria-label="Delete Topic"
           >
-            <TrashIcon className="w-4 h-4" />
+            <TrashIcon className="w-5 h-5 text-red-400 group-hover:text-white" />
           </button>
         // </Tooltip>
       )}

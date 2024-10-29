@@ -7,6 +7,12 @@ export interface Topic {
     isUserAdded: boolean;
   }
   
+  export interface GeneratedTopic {
+    id: string;
+    title: string;
+    content: string;
+  }
+  
   export interface Lesson {
     id: string;
     number: number;
@@ -15,4 +21,6 @@ export interface Topic {
     status: string;
     topics: Topic[];
     brief: string;
+    generated?: boolean;
+    generatedTopics?: GeneratedTopic[];
   }

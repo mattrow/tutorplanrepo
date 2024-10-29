@@ -15,8 +15,9 @@ import Sidebar from '@/components/ui/Sidebar'
 import DashboardHome from '@/components/dashboard/DashboardHome';
 import AddStudentForm from '@/components/dashboard/AddStudentForm';
 import StudentProfile from '@/components/student-profile/StudentProfile';
-import LessonView from '@/components/LessonView/LessonView';
+// import LessonView from '@/components/LessonView/LessonView';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import LessonPage from '@/components/LessonView/LessonPage';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string);
 
@@ -148,21 +149,24 @@ export default function DashboardPage() {
       );
     }
 
-    // Check for lesson route
-    const lessonMatch = pathname.match(/^\/dashboard\/lesson\/(\d+)$/);
-    if (lessonMatch) {
-      return (
-        <div className="flex">
-          <Sidebar />
-          <div className="ml-64 w-full">
-            <LessonView 
-              lessonId={lessonMatch[1]} 
-              onClose={() => router.push('/dashboard')} 
-            />
-          </div>
-        </div>
-      );
-    }
+    // // Check for lesson route
+    // const lessonMatch = pathname.match(/^\/dashboard\/student\/([^/]+)\/lesson\/([^/]+)$/);
+    // if (lessonMatch) {
+    //   const studentId = lessonMatch[1];
+    //   const lessonId = lessonMatch[2];
+    //   return (
+    //     <div className="flex">
+    //       <Sidebar />
+    //       <div className="ml-64 w-full">
+    //         <LessonPage
+    //           studentId={studentId}
+    //           lessonId={lessonId}
+    //           onClose={() => router.push('/dashboard')}
+    //         />
+    //       </div>
+    //     </div>
+    //   );
+    // }
 
     // Check for student route
     const studentMatch = pathname.match(/^\/dashboard\/student\/([^/]+)$/);
