@@ -45,23 +45,33 @@ export async function GET(
       return NextResponse.json({ error: 'No lessons found' }, { status: 404 });
     }
 
-    // Get the lessons as stored
-    const lessons = levelData.lessons.map((lesson: any) => ({
-      id: lesson.id,
-      number: lesson.number,
-      title: lesson.title,
-      date: lesson.date,
-      status: lesson.status,
-      brief: lesson.brief,
-      topics: lesson.topics.map((t: any) => ({
-        id: t.id,
-        topicName: t.topicName,
-        topicDescription: t.topicDescription,
-        order: t.order,
-        status: t.status,
-        isUserAdded: t.isUserAdded || false,
-      })),
-    }));
+    // Update the lessons array to include the 'generated' status
+    const lessons = await Promise.all(
+      levelData.lessons.map(async (lesson: any) => {
+        // Check if the lesson has been generated
+        const lessonRef = studentRef.collection('lessons').doc(lesson.id);
+        const lessonDoc = await lessonRef.get();
+        const generated = lessonDoc.exists && lessonDoc.data()?.generated === true;
+
+        return {
+          id: lesson.id,
+          number: lesson.number,
+          title: lesson.title,
+          date: lesson.date,
+          status: lesson.status,
+          brief: lesson.brief,
+          generated, // Include generated status
+          topics: lesson.topics.map((t: any) => ({
+            id: t.id,
+            topicName: t.topicName,
+            topicDescription: t.topicDescription,
+            order: t.order,
+            status: t.status,
+            isUserAdded: t.isUserAdded || false,
+          })),
+        };
+      })
+    );
 
     return NextResponse.json({ lessons });
   } catch (error) {

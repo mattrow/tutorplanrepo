@@ -14,6 +14,7 @@ interface LessonCardProps {
   onAddTopic: (lessonId: string, newTopic: any) => void;
   onDeleteTopic: (lessonId: string, topicId: string) => void;
   studentId: string;
+  onLessonGenerated: (lessonId: string) => void;
 }
 
 const LessonCard = ({
@@ -22,6 +23,7 @@ const LessonCard = ({
   onAddTopic,
   onDeleteTopic,
   studentId,
+  onLessonGenerated,
 }: LessonCardProps) => {
   const router = useRouter();
   const lessonId = lesson.id;
@@ -34,7 +36,6 @@ const LessonCard = ({
   const [newTopicDescription, setNewTopicDescription] = useState('');
 
   const [isGenerating, setIsGenerating] = useState(false);
-  const [lessonGenerated, setLessonGenerated] = useState(lesson.generated || false);
 
   const handleClick = () => {
     if (isClickable) {
@@ -87,7 +88,7 @@ const LessonCard = ({
       );
 
       if (response.ok) {
-        setLessonGenerated(true);
+        onLessonGenerated(lessonId);
       } else {
         console.error('Failed to generate lesson');
         // Optionally handle error
@@ -165,7 +166,7 @@ const LessonCard = ({
 
       {/* Generate/View Lesson Button */}
       <div className="ml-4">
-        {lessonGenerated ? (
+        {lesson.generated ? (
           <Button
             onClick={() => router.push(`/dashboard/student/${studentId}/lesson/${lessonId}`)}
           >

@@ -292,6 +292,14 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
     setHasChanges(true); // Indicate that there are unsaved changes
   };
 
+  const handleLessonGenerated = (lessonId: string) => {
+    setLessons((prevLessons) =>
+      prevLessons.map((lesson) =>
+        lesson.id === lessonId ? { ...lesson, generated: true } : lesson
+      )
+    );
+  };
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -323,6 +331,7 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
                 onAddTopic={handleAddTopic}
                 onDeleteTopic={handleDeleteTopic}
                 studentId={studentId}
+                onLessonGenerated={handleLessonGenerated}
               />
             </SortableContext>
           ))}
