@@ -36,35 +36,33 @@ export async function POST(
       .collection('levels')
       .doc(currentLevel);
 
-    const levelDoc = await levelRef.get();
-    const levelData = levelDoc.data();
-
-    if (!levelData || !levelData.topics) {
-      return NextResponse.json({ error: 'No topics found' }, { status: 404 });
-    }
-
     const { lessons } = await request.json();
 
-    const updatedTopics = lessons.flatMap((lesson: any, lessonIndex: number) =>
-      lesson.topics.map((topic: any, topicIndex: number) => ({
-        id: topic.id,
-        topicName: topic.topicName,
-        topicDescription: topic.topicDescription,
-        order: lessonIndex * 2 + topicIndex + 1,
-        status: topic.status,
-        isUserAdded: topic.isUserAdded || false,
-      }))
-    );
-
+    // Update the level document to include the lessons as they are
     await levelRef.update({
-      topics: updatedTopics,
+      lessons: lessons.map((lesson: any) => ({
+        id: lesson.id,
+        number: lesson.number,
+        title: lesson.title,
+        date: lesson.date,
+        status: lesson.status,
+        brief: lesson.brief,
+        topics: lesson.topics.map((topic: any) => ({
+          id: topic.id,
+          topicName: topic.topicName,
+          topicDescription: topic.topicDescription,
+          order: topic.order,
+          status: topic.status,
+          isUserAdded: topic.isUserAdded || false,
+        })),
+      })),
     });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error updating topic order:', error);
+    console.error('Error updating lesson data:', error);
     return NextResponse.json(
-      { error: 'Failed to update topic order' },
+      { error: 'Failed to update lesson data' },
       { status: 500 }
     );
   }

@@ -31,7 +31,7 @@ export async function GET(
 
     const { currentLevel, language } = studentData;
 
-    // Fetch topics from Firestore
+    // Fetch lessons from Firestore
     const levelRef = studentRef
       .collection('subject')
       .doc(language.toLowerCase())
@@ -41,40 +41,27 @@ export async function GET(
     const levelDoc = await levelRef.get();
     const levelData = levelDoc.data();
 
-    if (!levelData || !levelData.topics) {
-      return NextResponse.json({ error: 'No topics found' }, { status: 404 });
+    if (!levelData || !levelData.lessons) {
+      return NextResponse.json({ error: 'No lessons found' }, { status: 404 });
     }
 
-    // Sort topics by order
-    const sortedTopics = levelData.topics
-      .sort((a: any, b: any) => a.order - b.order)
-      .filter((topic: any) => !topic.isDeleted);
-
-    // Group topics into lessons with 2 topics each
-    const lessons = [];
-    const topicsPerLesson = 2;
-    const totalLessons = Math.ceil(sortedTopics.length / topicsPerLesson);
-
-    for (let i = 0; i < totalLessons; i++) {
-      const lessonTopics = sortedTopics.slice(i * topicsPerLesson, (i + 1) * topicsPerLesson);
-
-      lessons.push({
-        id: (i + 1).toString(),
-        number: i + 1,
-        title: `Lesson ${i + 1}: ${lessonTopics.map((t: any) => t.topicName).join(' & ')}`,
-        date: new Date(Date.now() + i * 7 * 24 * 60 * 60 * 1000).toISOString(),
-        status: i === 0 ? 'upcoming' : 'planned',
-        topics: lessonTopics.map((t: any) => ({
-          id: t.id || `topic-${t.order}`,
-          topicName: t.topicName,
-          topicDescription: t.topicDescription,
-          order: t.order,
-          status: t.status,
-          isUserAdded: t.isUserAdded || false,
-        })),
-        brief: lessonTopics.map((t: any) => t.topicDescription).join('\n'),
-      });
-    }
+    // Get the lessons as stored
+    const lessons = levelData.lessons.map((lesson: any) => ({
+      id: lesson.id,
+      number: lesson.number,
+      title: lesson.title,
+      date: lesson.date,
+      status: lesson.status,
+      brief: lesson.brief,
+      topics: lesson.topics.map((t: any) => ({
+        id: t.id,
+        topicName: t.topicName,
+        topicDescription: t.topicDescription,
+        order: t.order,
+        status: t.status,
+        isUserAdded: t.isUserAdded || false,
+      })),
+    }));
 
     return NextResponse.json({ lessons });
   } catch (error) {

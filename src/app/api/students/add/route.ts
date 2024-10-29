@@ -48,18 +48,48 @@ export async function POST(req: NextRequest) {
     // Add more language curriculum conditions here as needed
 
     if (curriculumData) {
-      // Create the level document with its topics
+      // Sort topics by order
+      const sortedTopics = curriculumData.sort((a, b) => a.order - b.order);
+
+      // Group topics into initial lessons based on your preference
+      const topicsPerLesson = 2;
+      const totalLessons = Math.ceil(sortedTopics.length / topicsPerLesson);
+      const lessons = [];
+
+      for (let i = 0; i < totalLessons; i++) {
+        const lessonTopics = sortedTopics.slice(
+          i * topicsPerLesson,
+          (i + 1) * topicsPerLesson
+        );
+
+        lessons.push({
+          id: (i + 1).toString(),
+          number: i + 1,
+          title: `Lesson ${i + 1}: ${lessonTopics
+            .map((t) => t.topicName)
+            .join(' & ')}`,
+          date: new Date(
+            Date.now() + i * 7 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+          status: i === 0 ? 'upcoming' : 'planned',
+          brief: lessonTopics.map((t) => t.topicDescription).join('\n'),
+          topics: lessonTopics.map((t) => ({
+            id: `topic-${t.order}`,
+            topicName: t.topicName,
+            topicDescription: t.topicDescription,
+            order: t.order,
+            status: 'not started',
+            isUserAdded: false,
+          })),
+        });
+      }
+
+      // Save the lessons to Firestore
       await levelsRef.doc(studentData.level).set({
-        topics: curriculumData.map(topic => ({
-          id: `topic-${topic.order}`,
-          topicName: topic.topicName,
-          topicDescription: topic.topicDescription,
-          order: topic.order,
-          status: 'not started',
-        })),
+        lessons,
         startDate: now,
         completedTopics: 0,
-        totalTopics: curriculumData.length,
+        totalTopics: sortedTopics.length,
       });
     }
 
