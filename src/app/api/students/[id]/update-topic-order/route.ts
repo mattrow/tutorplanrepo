@@ -53,6 +53,7 @@ export async function POST(
           topicDescription: topic.topicDescription,
           order: topic.order,
           status: topic.status,
+          type: topic.type,
           isUserAdded: topic.isUserAdded || false,
         })),
       })),

@@ -4,6 +4,7 @@ export interface Topic {
     topicDescription: string;
     order: number;
     status: 'not started' | 'in progress' | 'completed';
+    type: 'communication' | 'vocabulary' | 'grammar';
     isUserAdded: boolean;
   }
   

@@ -6,6 +6,7 @@ import { useDroppable } from '@dnd-kit/core';
 import TopicItem from './TopicItem';
 import { Button } from '@/components/ui/button';
 import { PlusIcon } from '@heroicons/react/24/outline';
+import { Sparkles, BookOpen, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 interface LessonCardProps {
@@ -28,50 +29,23 @@ const LessonCard = ({
   const router = useRouter();
   const lessonId = lesson.id;
 
-  // Get the user object from your authentication hook
-  const { user } = useAuth(); // Add this line
+  const { user } = useAuth();
 
   const [showForm, setShowForm] = useState(false);
   const [newTopicName, setNewTopicName] = useState('');
   const [newTopicDescription, setNewTopicDescription] = useState('');
+  const [newTopicType, setNewTopicType] = useState<'communication' | 'vocabulary' | 'grammar' | ''>('');
 
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleClick = () => {
     if (isClickable) {
-      // Additional click logic if needed
+      router.push(`/dashboard/student/${studentId}/lesson/${lessonId}`);
     }
   };
 
-  const { setNodeRef } = useDroppable({
-    id: lessonId,
-    data: {
-      type: 'lesson',
-    },
-  });
-
-  const handleAddTopicClick = () => {
-    setShowForm(true);
-  };
-
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newTopic = {
-      id: `user-topic-${Date.now()}`,
-      topicName: newTopicName,
-      topicDescription: newTopicDescription,
-      order: lesson.topics.length + 1,
-      status: 'not started',
-      isUserAdded: true,
-    };
-    onAddTopic(lessonId, newTopic);
-    setNewTopicName('');
-    setNewTopicDescription('');
-    setShowForm(false);
-  };
-
-  // Function to handle lesson generation
-  const handleGenerateLesson = async () => {
+  const handleGenerateLesson = async (event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent the card click event
     setIsGenerating(true);
     try {
       const token = await user?.getIdToken();
@@ -88,10 +62,10 @@ const LessonCard = ({
       );
 
       if (response.ok) {
+        // Update the lesson generated status
         onLessonGenerated(lessonId);
       } else {
         console.error('Failed to generate lesson');
-        // Optionally handle error
       }
     } catch (error) {
       console.error('Error generating lesson:', error);
@@ -100,13 +74,47 @@ const LessonCard = ({
     }
   };
 
+  const { setNodeRef } = useDroppable({
+    id: lessonId,
+    data: {
+      type: 'lesson',
+    },
+  });
+
+  const handleAddTopicClick = () => {
+    setShowForm(true);
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const newTopic = {
+      id: `user-topic-${Date.now()}`,
+      topicName: newTopicName,
+      topicDescription: newTopicDescription,
+      order: lesson.topics.length + 1,
+      status: 'not started',
+      type: newTopicType, // Include the selected topic type
+      isUserAdded: true,
+    };
+
+    onAddTopic(lessonId, newTopic);
+
+    // Reset form fields
+    setNewTopicName('');
+    setNewTopicDescription('');
+    setNewTopicType('');
+    setShowForm(false);
+  };
+
   return (
     <div
-      className={`bg-white rounded-lg shadow-sm border border-gray-200 p-4 ${
+      className={`bg-white rounded-lg p-4 shadow-sm border border-gray-200 flex ${
         isClickable ? 'cursor-pointer' : ''
-      } flex justify-between items-start`}
+      }`}
       onClick={handleClick}
     >
+      {/* Left Side: Topics */}
       <div className="flex-1">
         <h2 className="text-xl font-semibold">{lesson.title}</h2>
 
@@ -126,7 +134,7 @@ const LessonCard = ({
             ))}
 
             {showForm ? (
-              <div className="p-2 border border-gray-200 rounded-lg">
+              <div className="p-2 border border-gray-200 rounded-lg" onClick={(e) => e.stopPropagation()}>
                 <form onSubmit={handleFormSubmit} className="space-y-2">
                   <input
                     type="text"
@@ -143,6 +151,24 @@ const LessonCard = ({
                     className="w-full p-2 border border-gray-300 rounded"
                     required
                   />
+
+                  {/* New Topic Type Select Dropdown */}
+                  <select
+                    value={newTopicType}
+                    onChange={(e) =>
+                      setNewTopicType(e.target.value as 'communication' | 'vocabulary' | 'grammar')
+                    }
+                    className="w-full p-2 border border-gray-300 rounded"
+                    required
+                  >
+                    <option value="" disabled>
+                      Select Topic Type
+                    </option>
+                    <option value="communication">Communication</option>
+                    <option value="vocabulary">Vocabulary</option>
+                    <option value="grammar">Grammar</option>
+                  </select>
+
                   <div className="flex gap-2">
                     <Button type="submit">Add</Button>
                     <Button type="button" onClick={() => setShowForm(false)}>
@@ -154,7 +180,10 @@ const LessonCard = ({
             ) : (
               <div
                 className="flex items-center justify-center p-2 rounded-lg border border-dashed border-blue-300 bg-blue-50 text-blue-500 cursor-pointer hover:bg-blue-100"
-                onClick={handleAddTopicClick}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowForm(true);
+                }}
               >
                 <PlusIcon className="w-5 h-5 mr-2" />
                 Add New Topic
@@ -164,17 +193,67 @@ const LessonCard = ({
         </SortableContext>
       </div>
 
-      {/* Generate/View Lesson Button */}
-      <div className="ml-4">
-        {lesson.generated ? (
+      {/* Right Side: Action Buttons */}
+      <div className="flex flex-col items-center justify-center ml-4">
+        {isGenerating ? (
           <Button
-            onClick={() => router.push(`/dashboard/student/${studentId}/lesson/${lessonId}`)}
+            disabled
+            className="bg-gray-300 text-gray-500 flex items-center w-52"
+            onClick={(e) => e.stopPropagation()}
           >
-            View Lesson
+            Generating...
+            <svg
+              className="w-4 h-4 ml-2 animate-spin"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v8H4z"
+              ></path>
+            </svg>
           </Button>
+        ) : lesson.generated ? (
+          <div className="space-y-2">
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(
+                  `/dashboard/student/${studentId}/lesson/${lessonId}`
+                );
+              }}
+              className="bg-green-500 text-white hover:bg-green-600 flex items-center w-52"
+            >
+              <BookOpen className="w-4 h-4 mr-2" />
+              View Lesson
+            </Button>
+            <Button
+              onClick={handleGenerateLesson}
+              className="bg-red-500 text-white hover:bg-red-600 flex items-center w-52"
+              // onClick={(e) => e.stopPropagation()}
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Regenerate Lesson
+            </Button>
+          </div>
         ) : (
-          <Button onClick={handleGenerateLesson} disabled={isGenerating}>
-            {isGenerating ? 'Generating...' : 'Generate Lesson'}
+          <Button
+            onClick={handleGenerateLesson}
+            className="bg-blue-500 text-white hover:bg-blue-600 flex items-center w-52"
+            // onClick={(e) => e.stopPropagation()}
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            Generate Lesson
           </Button>
         )}
       </div>

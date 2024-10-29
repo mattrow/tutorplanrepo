@@ -1,15 +1,14 @@
 // src/components/student-profile/TopicItem.tsx
 
 import React from 'react';
+import { UniqueIdentifier } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { UniqueIdentifier } from '@dnd-kit/core';
 import { Bars3Icon, TrashIcon } from '@heroicons/react/24/outline';
-// Import Tooltip if using it
-// import Tooltip from '@/components/ui/Tooltip';
+import { Topic } from '@/types/lesson';
 
 interface TopicItemProps {
-  topic: any;
+  topic: Topic;
   lessonId: UniqueIdentifier | null;
   onDeleteTopic?: (lessonId: string, topicId: string) => void;
 }
@@ -34,7 +33,7 @@ const TopicItem = ({ topic, lessonId, onDeleteTopic }: TopicItemProps) => {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.6 : 1,
+    opacity: isDragging ? 0.7 : 1,
     cursor: 'grab',
   };
 
@@ -45,11 +44,17 @@ const TopicItem = ({ topic, lessonId, onDeleteTopic }: TopicItemProps) => {
     }
   };
 
+  const typeColors: Record<Topic['type'], string> = {
+    communication: 'bg-purple-100 text-purple-800',
+    vocabulary: 'bg-green-100 text-green-800',
+    grammar: 'bg-red-100 text-red-800',
+  };
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center justify-between gap-2 p-2 rounded-lg border border-gray-200 bg-white shadow-sm ${
+      className={`flex items-center justify-between gap-2 p-4 rounded-lg border border-gray-200 shadow-sm bg-blue-10 ${
         isDragging ? 'z-50' : ''
       }`}
     >
@@ -63,14 +68,23 @@ const TopicItem = ({ topic, lessonId, onDeleteTopic }: TopicItemProps) => {
           <Bars3Icon className="w-5 h-5 text-gray-400" />
         </div>
         <div>
-          <span>{topic.topicName}</span>
-          <p className="text-sm text-gray-500">{topic.topicDescription}</p>
+          <span className="font-medium text-gray-800">{topic.topicName}</span>
+          <p className="text-sm text-gray-600">{topic.topicDescription}</p>
         </div>
       </div>
-      {/* Conditionally render Delete button */}
-      {topic.isUserAdded && (
-        // Uncomment the Tooltip component if using it
-        // <Tooltip content="Delete Topic">
+
+      <div className="flex items-center gap-2">
+        {/* Topic Type Badge */}
+        <span
+          className={`flex-shrink-0 px-3 py-1 text-sm font-semibold rounded-full ${
+            typeColors[topic.type]
+          }`}
+        >
+          {topic.type.charAt(0).toUpperCase() + topic.type.slice(1)}
+        </span>
+
+        {/* Conditionally render Delete button */}
+        {topic.isUserAdded && (
           <button
             onClick={handleDelete}
             className="border-2 border-red-400 hover:bg-red-400 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-red-400 group"
@@ -78,8 +92,8 @@ const TopicItem = ({ topic, lessonId, onDeleteTopic }: TopicItemProps) => {
           >
             <TrashIcon className="w-5 h-5 text-red-400 group-hover:text-white" />
           </button>
-        // </Tooltip>
-      )}
+        )}
+      </div>
     </div>
   );
 };

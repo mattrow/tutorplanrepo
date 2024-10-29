@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
             topicDescription: t.topicDescription,
             order: t.order,
             status: 'not started',
+            type: t.type,
             isUserAdded: false,
           })),
         });

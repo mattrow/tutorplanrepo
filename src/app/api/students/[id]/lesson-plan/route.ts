@@ -67,6 +67,7 @@ export async function GET(
             topicDescription: t.topicDescription,
             order: t.order,
             status: t.status,
+            type: t.type, // Include the type field
             isUserAdded: t.isUserAdded || false,
           })),
         };
