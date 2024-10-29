@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import LessonPage from '@/components/LessonView/LessonPage';
 import { useAuth } from '@/hooks/useAuth';
 import { useParams } from 'next/navigation';
+import Sidebar from '@/components/ui/Sidebar';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 export default function LessonViewPage() {
   const router = useRouter();
@@ -46,14 +48,33 @@ export default function LessonViewPage() {
   }, [user, studentId, lessonId]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex h-screen">
+        <Sidebar />
+        <div className="flex-1 ml-64">
+          <LoadingSpinner />
+        </div>
+      </div>
+    );
   }
 
   if (!lessonData) {
-    return <div>Lesson not found.</div>;
+    return (
+      <div className="flex h-screen">
+        <Sidebar />
+        <div className="flex-1 ml-64 p-8">
+          Lesson not found.
+        </div>
+      </div>
+    );
   }
 
   return (
-    <LessonPage lesson={lessonData} />
+    <div className="flex h-screen">
+      <Sidebar />
+      <div className="flex-1 ml-64">
+        <LessonPage lesson={lessonData} />
+      </div>
+    </div>
   );
 }

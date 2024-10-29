@@ -33,26 +33,46 @@ export async function POST(
 
     for (const topic of topics) {
       // For each topic, generate the lesson content
-      const prompt = `Generate a detailed lesson plan for the topic "${topic.topicName}". Include:
-- Topic Title
-- Topic Brief
-- Example of how to explain this topic
-- Example exercises`;
+      const prompt = `You are an expert language tutor. Generate a detailed online one to one lesson plan for an adult learner for the topic "${topic.topicName}". Provide the following information in JSON format only, with keys exactly as specified:
+
+{
+  "title": "Title of the topic",
+  "description": "Brief description of the topic",
+  "teachingTips": "Suggestions on how to teach this topic effectively",
+  "exercises": ["Exercise 1", "Exercise 2", "Exercise 3"]
+}
+
+Ensure the JSON is properly formatted, uses double quotes for keys and strings, and can be parsed by JSON parsers.
+`;
 
       const response = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: 'You are an expert educator.' },
+          { role: 'system', content: 'You are an assistant that only replies in JSON format.' },
           { role: 'user', content: prompt },
         ],
       });
 
-      const content = response.choices[0].message?.content;
+      const content = response.choices[0].message?.content?.trim();
+
+      // Parse the JSON content
+      let parsedContent;
+      try {
+        parsedContent = JSON.parse(content || '');
+      } catch (e) {
+        console.error('Failed to parse OpenAI response as JSON:', e);
+        return NextResponse.json(
+          { error: 'Failed to parse OpenAI response' },
+          { status: 500 }
+        );
+      }
 
       generatedTopics.push({
         id: topic.id,
-        title: topic.topicName,
-        content,
+        title: parsedContent.title || topic.topicName,
+        description: parsedContent.description || '',
+        teachingTips: parsedContent.teachingTips || '',
+        exercises: parsedContent.exercises || [],
       });
     }
 
@@ -65,12 +85,15 @@ export async function POST(
       .collection('lessons')
       .doc(params.lessonId);
 
-    await lessonRef.set({
-      generated: true,
-      generatedTopics, // Store the generated topics here
-      createdAt: new Date().toISOString(),
-      title: `Lesson ${params.lessonId}`, // You can adjust the title as needed
-    });
+    await lessonRef.set(
+      {
+        generated: true,
+        generatedTopics, // Store the structured generated topics here
+        createdAt: new Date().toISOString(),
+        title: `Lesson ${params.lessonId}`, // You can adjust the title as needed
+      },
+      { merge: true }
+    );
 
     return NextResponse.json({ success: true });
   } catch (error) {
