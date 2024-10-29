@@ -34,7 +34,8 @@ const TopicItem = ({ topic, lessonId, onDeleteTopic }: TopicItemProps) => {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.7 : 1,
-    cursor: 'grab',
+    // Optionally, you can handle cursor styling via Tailwind CSS classes
+    // cursor: 'grab',
   };
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -54,17 +55,15 @@ const TopicItem = ({ topic, lessonId, onDeleteTopic }: TopicItemProps) => {
     <div
       ref={setNodeRef}
       style={style}
+      {...attributes} // Move attributes here
+      {...listeners}  // Move listeners here
       className={`flex items-center justify-between gap-2 p-4 rounded-lg border border-gray-200 shadow-sm bg-blue-10 ${
         isDragging ? 'z-50' : ''
-      }`}
+      } cursor-grab active:cursor-grabbing`}
     >
       <div className="flex items-center gap-2">
-        {/* Drag handle icon */}
-        <div
-          {...listeners}
-          {...attributes}
-          className="cursor-grab active:cursor-grabbing"
-        >
+        {/* Drag handle icon - No listeners here */}
+        <div>
           <Bars3Icon className="w-5 h-5 text-gray-400" />
         </div>
         <div>
@@ -87,6 +86,7 @@ const TopicItem = ({ topic, lessonId, onDeleteTopic }: TopicItemProps) => {
         {topic.isUserAdded && (
           <button
             onClick={handleDelete}
+            onPointerDown={(e) => e.stopPropagation()} // Prevent drag start
             className="border-2 border-red-400 hover:bg-red-400 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-red-400 group"
             aria-label="Delete Topic"
           >

@@ -109,10 +109,7 @@ const LessonCard = ({
 
   return (
     <div
-      className={`bg-white rounded-lg p-4 shadow-sm border border-gray-200 flex ${
-        isClickable ? 'cursor-pointer' : ''
-      }`}
-      onClick={handleClick}
+      className={`bg-white rounded-lg p-4 shadow-sm border border-gray-200 flex`} 
     >
       {/* Left Side: Topics */}
       <div className="flex-1">
