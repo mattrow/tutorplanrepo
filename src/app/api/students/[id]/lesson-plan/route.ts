@@ -70,6 +70,7 @@ export async function GET(
           topicDescription: t.topicDescription,
           order: t.order,
           status: t.status,
+          isUserAdded: t.isUserAdded || false,
         })),
         brief: lessonTopics.map((t: any) => t.topicDescription).join('\n'),
       });

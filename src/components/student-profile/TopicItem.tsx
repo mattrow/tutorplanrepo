@@ -5,30 +5,31 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { UniqueIdentifier } from '@dnd-kit/core';
 import { Bars3Icon, TrashIcon } from '@heroicons/react/24/outline';
-
+// Import Tooltip if using it
+// import Tooltip from '@/components/ui/Tooltip';
 
 interface TopicItemProps {
   topic: any;
   lessonId: UniqueIdentifier | null;
-  onDeleteTopic?: (lessonId: string, topicId: string) => void; // Add this prop
+  onDeleteTopic?: (lessonId: string, topicId: string) => void;
 }
 
 const TopicItem = ({ topic, lessonId, onDeleteTopic }: TopicItemProps) => {
-    const {
-      attributes,
-      listeners,
-      setNodeRef,
-      transform,
-      transition,
-      isDragging,
-    } = useSortable({
-      id: topic.id,
-      data: {
-        type: 'topic',
-        lessonId,
-        topicId: topic.id,
-      },
-    });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: topic.id,
+    data: {
+      type: 'topic',
+      lessonId,
+      topicId: topic.id,
+    },
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -68,9 +69,16 @@ const TopicItem = ({ topic, lessonId, onDeleteTopic }: TopicItemProps) => {
       </div>
       {/* Conditionally render Delete button */}
       {topic.isUserAdded && (
-        <button onClick={handleDelete} className="text-red-500 hover:text-red-700">
-          <TrashIcon className="w-5 h-5" />
-        </button>
+        // Uncomment the Tooltip component if using it
+        // <Tooltip content="Delete Topic">
+          <button
+            onClick={handleDelete}
+            className="bg-red-400 hover:bg-red-500 text-white rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+            aria-label="Delete Topic"
+          >
+            <TrashIcon className="w-4 h-4" />
+          </button>
+        // </Tooltip>
       )}
     </div>
   );

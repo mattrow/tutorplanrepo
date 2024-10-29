@@ -4,13 +4,14 @@ import { Lesson } from '@/types/lesson';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
 import TopicItem from './TopicItem';
-import { Button } from '@/components/ui/button'; // Assuming you have a Button component
+import { Button } from '@/components/ui/button';
+import { PlusIcon } from '@heroicons/react/24/outline';
 
 interface LessonCardProps {
   lesson: Lesson;
   isClickable: boolean;
   onAddTopic: (lessonId: string, newTopic: any) => void;
-  onDeleteTopic: (lessonId: string, topicId: string) => void; // Add this prop
+  onDeleteTopic: (lessonId: string, topicId: string) => void;
 }
 
 const LessonCard = ({ lesson, isClickable, onAddTopic, onDeleteTopic }: LessonCardProps) => {
@@ -22,11 +23,11 @@ const LessonCard = ({ lesson, isClickable, onAddTopic, onDeleteTopic }: LessonCa
 
   const handleClick = () => {
     if (isClickable) {
+      // Navigate to the lesson page if needed
       // router.push(`/dashboard/lessons/${lesson.id}`);
     }
   };
 
-  // Use the useDroppable hook
   const { setNodeRef } = useDroppable({
     id: lessonId,
     data: {
@@ -41,15 +42,14 @@ const LessonCard = ({ lesson, isClickable, onAddTopic, onDeleteTopic }: LessonCa
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newTopic = {
-      id: `user-topic-${Date.now()}`, // Generate a unique ID with a prefix
+      id: `user-topic-${Date.now()}`,
       topicName: newTopicName,
       topicDescription: newTopicDescription,
       order: lesson.topics.length + 1,
       status: 'not started',
-      isUserAdded: true, // Set this property
+      isUserAdded: true,
     };
     onAddTopic(lessonId, newTopic);
-    // Reset form state
     setNewTopicName('');
     setNewTopicDescription('');
     setShowForm(false);
@@ -62,7 +62,6 @@ const LessonCard = ({ lesson, isClickable, onAddTopic, onDeleteTopic }: LessonCa
       }`}
       onClick={handleClick}
     >
-      {/* Render lesson details */}
       <h2 className="text-xl font-semibold">{lesson.title}</h2>
 
       <SortableContext
@@ -71,56 +70,52 @@ const LessonCard = ({ lesson, isClickable, onAddTopic, onDeleteTopic }: LessonCa
         strategy={verticalListSortingStrategy}
       >
         <div ref={setNodeRef} className="mt-2 space-y-2 min-h-[50px]">
-          {lesson.topics.length > 0 ? (
-            lesson.topics.map((topic) => (
-              <TopicItem
-                key={topic.id}
-                topic={topic}
-                lessonId={lessonId}
-                onDeleteTopic={onDeleteTopic} // Pass the prop
-              />
-            ))
+          {lesson.topics.map((topic) => (
+            <TopicItem
+              key={topic.id}
+              topic={topic}
+              lessonId={lessonId}
+              onDeleteTopic={onDeleteTopic}
+            />
+          ))}
+
+          {showForm ? (
+            <div className="p-2 border border-gray-200 rounded-lg">
+              <form onSubmit={handleFormSubmit} className="space-y-2">
+                <input
+                  type="text"
+                  placeholder="Topic Title"
+                  value={newTopicName}
+                  onChange={(e) => setNewTopicName(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  required
+                />
+                <textarea
+                  placeholder="Topic Description"
+                  value={newTopicDescription}
+                  onChange={(e) => setNewTopicDescription(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  required
+                />
+                <div className="flex gap-2">
+                  <Button type="submit">Add</Button>
+                  <Button type="button" onClick={() => setShowForm(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </div>
           ) : (
-            // Placeholder for empty lessons
             <div
-              className="p-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 text-center"
+              className="flex items-center justify-center p-2 rounded-lg border border-dashed border-blue-300 bg-blue-50 text-blue-500 cursor-pointer hover:bg-blue-100"
+              onClick={handleAddTopicClick}
             >
-              Drag topics here
+              <PlusIcon className="w-5 h-5 mr-2" />
+              Add New Topic
             </div>
           )}
         </div>
       </SortableContext>
-
-      {/* Add Topic Button */}
-      <div className="mt-4">
-        {!showForm ? (
-          <Button onClick={handleAddTopicClick}>Add Topic</Button>
-        ) : (
-          <form onSubmit={handleFormSubmit} className="mt-2 space-y-2">
-            <input
-              type="text"
-              placeholder="Topic Title"
-              value={newTopicName}
-              onChange={(e) => setNewTopicName(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded"
-              required
-            />
-            <textarea
-              placeholder="Topic Description"
-              value={newTopicDescription}
-              onChange={(e) => setNewTopicDescription(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded"
-              required
-            />
-            <div className="flex gap-2">
-              <Button type="submit">Add</Button>
-              <Button type="button" onClick={() => setShowForm(false)}>
-                Cancel
-              </Button>
-            </div>
-          </form>
-        )}
-      </div>
     </div>
   );
 };

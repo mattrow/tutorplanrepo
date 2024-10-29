@@ -4,7 +4,7 @@ export interface Topic {
     topicDescription: string;
     order: number;
     status: 'not started' | 'in progress' | 'completed';
-    isUserAdded?: boolean;
+    isUserAdded: boolean;
   }
   
   export interface Lesson {

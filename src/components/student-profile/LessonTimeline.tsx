@@ -45,9 +45,35 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
     useSensor(PointerSensor)
   );
 
+  const fetchLessonPlan = async () => {
+    try {
+      setLoading(true);
+      const token = await user?.getIdToken();
+      const res = await fetch(`/api/students/${studentId}/lesson-plan`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!res.ok) {
+        throw new Error('Failed to fetch lesson plan');
+      }
+      const data = await res.json();
+      console.log('Fetched lessons:', data.lessons);
+      setLessons(data.lessons);
+      initialLessonsRef.current = data.lessons;
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchLessonPlan();
-  }, []);
+    if (user) {
+      fetchLessonPlan();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (pathname !== previousPathname) {
@@ -64,28 +90,6 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
       }
     }
   }, [pathname]);
-
-  const fetchLessonPlan = async () => {
-    try {
-      const token = await user?.getIdToken();
-      const response = await fetch(`/api/students/${studentId}/lesson-plan`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch lesson plan');
-      }
-
-      const data = await response.json();
-      setLessons(data.lessons);
-      initialLessonsRef.current = data.lessons;
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching lesson plan:', error);
-    }
-  };
 
   const findContainer = (id: UniqueIdentifier): UniqueIdentifier | null => {
     if (lessons.some((lesson) => lesson.id === id)) {
@@ -222,7 +226,9 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
         body: JSON.stringify({ lessons }),
       });
       setHasChanges(false); // Reset unsaved changes indicator
-      initialLessonsRef.current = lessons;
+
+      // Re-fetch updated lessons
+      await fetchLessonPlan();
     } catch (error) {
       console.error('Error updating topic order:', error);
       // Optionally show an error message to the user

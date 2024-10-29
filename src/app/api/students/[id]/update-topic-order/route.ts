@@ -45,32 +45,19 @@ export async function POST(
 
     const { lessons } = await request.json();
 
-    const existingTopics = levelData.topics;
-
-    const updatedTopics = existingTopics.map((curriculumTopic: any) => {
-      const updatedTopic = lessons
-        .flatMap((lesson: any) => lesson.topics)
-        .find((topic: any) => topic.id === curriculumTopic.id);
-
-      if (updatedTopic) {
-        return {
-          ...curriculumTopic,
-          order: updatedTopic.order,
-          status: updatedTopic.status,
-        };
-      }
-
-      return curriculumTopic;
-    });
-
-    const userAddedTopics = lessons
-      .flatMap((lesson: any) => lesson.topics)
-      .filter((topic: any) => topic.isUserAdded);
-
-    const allTopics = [...updatedTopics, ...userAddedTopics];
+    const updatedTopics = lessons.flatMap((lesson: any, lessonIndex: number) =>
+      lesson.topics.map((topic: any, topicIndex: number) => ({
+        id: topic.id,
+        topicName: topic.topicName,
+        topicDescription: topic.topicDescription,
+        order: lessonIndex * 2 + topicIndex + 1,
+        status: topic.status,
+        isUserAdded: topic.isUserAdded || false,
+      }))
+    );
 
     await levelRef.update({
-      topics: allTopics,
+      topics: updatedTopics,
     });
 
     return NextResponse.json({ success: true });
