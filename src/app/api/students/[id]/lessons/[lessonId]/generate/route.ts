@@ -196,7 +196,9 @@ Ensure the JSON is properly formatted, uses double quotes for keys and strings, 
     await lessonRef.set(
       {
         generated: true,
+        ownerId: userId,
         generatedTopics,
+        public: false,
         createdAt: new Date().toISOString(),
         title: `Lesson ${params.lessonId}`,
       },
