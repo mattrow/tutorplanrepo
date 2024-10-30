@@ -9,6 +9,7 @@ import { PlusIcon } from '@heroicons/react/24/outline';
 import { Sparkles, BookOpen, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { CSSTransition, SwitchTransition } from 'react-transition-group'
+import { firestore } from '@/firebase/admin'; // Ensure you're importing the client-side Firestore instance
 
 interface LessonCardProps {
   lesson: Lesson;
@@ -77,10 +78,16 @@ const LessonCard = ({
   };
 
   const handleGenerateLesson = async (event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent the card click event
+    event.stopPropagation();
     setIsGenerating(true);
     try {
-      const token = await user?.getIdToken();
+      // Check if user is not null
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const token = await user.getIdToken();
+
       const response = await fetch(
         `/api/students/${studentId}/lessons/${lessonId}/generate`,
         {
@@ -94,14 +101,34 @@ const LessonCard = ({
       );
 
       if (response.ok) {
-        // Update the lesson generated status
-        onLessonGenerated(lessonId);
+        // Start listening to Firestore for lesson generation status
+        const lessonRef = firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('students')
+          .doc(studentId)
+          .collection('lessons')
+          .doc(lessonId);
+
+        const unsubscribe = lessonRef.onSnapshot((doc) => {
+          const data = doc.data();
+          if (data?.generated) {
+            // Update the lesson generated status
+            onLessonGenerated(lessonId);
+            setIsGenerating(false);
+            unsubscribe(); // Stop listening
+          } else if (data?.error) {
+            console.error('Error generating lesson:', data.error);
+            setIsGenerating(false);
+            unsubscribe(); // Stop listening
+          }
+        });
       } else {
-        console.error('Failed to generate lesson');
+        console.error('Failed to initiate lesson generation');
+        setIsGenerating(false);
       }
     } catch (error) {
-      console.error('Error generating lesson:', error);
-    } finally {
+      console.error('Error initiating lesson generation:', error);
       setIsGenerating(false);
     }
   };
