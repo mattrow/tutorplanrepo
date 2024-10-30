@@ -9,7 +9,7 @@ const ExamplesSection: React.FC<ExamplesSectionProps> = ({ examples }) => {
   return (
     <div className="space-y-6">
       {examples.map((example, index) => (
-        <div key={index} className="bg-gray-50 rounded-xl p-6">
+        <div key={index} className="bg-blue-50/50 rounded-xl p-6">
           {example.context && (
             <h4 className="font-semibold text-gray-900 mb-2">{example.context}</h4>
           )}

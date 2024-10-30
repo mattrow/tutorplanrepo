@@ -1,4 +1,4 @@
- // src/components/LessonView/TopicSections/TopicNavigation.tsx
+// src/components/LessonView/TopicSections/TopicNavigation.tsx
 
 import React from 'react';
 import { BookOpen, FileText, ListChecks, Lightbulb } from 'lucide-react';
@@ -29,7 +29,7 @@ const TopicNavigation: React.FC<TopicNavigationProps> = ({
           onClick={() => onSectionChange(id)}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
             activeSection === id
-              ? 'bg-indigo-600 text-white'
+              ? 'bg-[#396afc] text-white'
               : 'text-gray-600 hover:bg-gray-100'
           }`}
         >

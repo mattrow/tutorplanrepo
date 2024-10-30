@@ -42,7 +42,7 @@ const LessonCard = ({
   const [isGenerating, setIsGenerating] = useState(false);
 
   // New state variables for message switching
-  const messages = ['Generating...', "It's a big file..."];
+  const messages = ["It's a big file...",'Generating...',];
   const [messageIndex, setMessageIndex] = useState(0);
   const [showAlternateMessage, setShowAlternateMessage] = useState(false);
 

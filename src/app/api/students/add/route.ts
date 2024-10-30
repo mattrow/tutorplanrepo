@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, firestore } from '@/firebase/admin';
 import { englishCurriculum } from '@/data/english-curriculum';
+import { portugueseCurriculum } from '@/data/portuguese-curriculum';
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,90 +15,103 @@ export async function POST(req: NextRequest) {
     const decodedToken = await adminAuth.verifyIdToken(token);
     const userId = decodedToken.uid;
 
+    // Create a mapping of curriculums
+    const curriculums: Record<string, any> = {
+      english: englishCurriculum,
+      portuguese: portugueseCurriculum,
+      // Add more languages here as needed
+    };
+
     // Get the student data from the request
     const studentData = await req.json();
     const now = new Date().toISOString();
 
-    // Add timestamp and initial values
-    const studentWithTimestamp = {
-      ...studentData,
-      completedLessons: 0,
-      startDate: now,
-      createdAt: now,
-      updatedAt: now,
-      currentLevel: studentData.level, // Store the current level
-    };
-
-    // Add to Firestore
-    const studentRef = await firestore
-      .collection('users')
-      .doc(userId)
-      .collection('students')
-      .add(studentWithTimestamp);
-
-    // Create the subject > language > levels structure
-    const subjectRef = studentRef.collection('subject');
-    const languageRef = subjectRef.doc(studentData.language.toLowerCase());
-    const levelsRef = languageRef.collection('levels');
-
     // Get curriculum data based on language and level
-    let curriculumData;
-    if (studentData.language.toLowerCase() === 'english') {
-      curriculumData = englishCurriculum[studentData.level];
-    }
-    // Add more language curriculum conditions here as needed
+    const languageKey = studentData.language.toLowerCase();
+    const curriculum = curriculums[languageKey];
 
-    if (curriculumData) {
-      // Sort topics by order
-      const sortedTopics = curriculumData.sort((a, b) => a.order - b.order);
+    if (curriculum) {
+      const curriculumData = curriculum[studentData.level];
 
-      // Group topics into initial lessons based on your preference
-      const topicsPerLesson = 2;
-      const totalLessons = Math.ceil(sortedTopics.length / topicsPerLesson);
-      const lessons = [];
+      if (curriculumData) {
+        // Sort topics by order
+        const sortedTopics = curriculumData.sort((a: { order: number; }, b: { order: number; }) => a.order - b.order);
 
-      for (let i = 0; i < totalLessons; i++) {
-        const lessonTopics = sortedTopics.slice(
-          i * topicsPerLesson,
-          (i + 1) * topicsPerLesson
-        );
+        // Group topics into initial lessons based on your preference
+        const topicsPerLesson = 2;
+        const totalLessons = Math.ceil(sortedTopics.length / topicsPerLesson);
+        const lessons = [];
 
-        lessons.push({
-          id: (i + 1).toString(),
-          number: i + 1,
-          title: `Lesson ${i + 1}: ${lessonTopics
-            .map((t) => t.topicName)
-            .join(' & ')}`,
-          date: new Date(
-            Date.now() + i * 7 * 24 * 60 * 60 * 1000
-          ).toISOString(),
-          status: i === 0 ? 'upcoming' : 'planned',
-          brief: lessonTopics.map((t) => t.topicDescription).join('\n'),
-          topics: lessonTopics.map((t) => ({
-            id: `topic-${t.order}`,
-            topicName: t.topicName,
-            topicDescription: t.topicDescription,
-            order: t.order,
-            status: 'not started',
-            type: t.type,
-            isUserAdded: false,
-          })),
+        for (let i = 0; i < totalLessons; i++) {
+          const lessonTopics = sortedTopics.slice(
+            i * topicsPerLesson,
+            (i + 1) * topicsPerLesson
+          );
+
+          lessons.push({
+            id: (i + 1).toString(),
+            number: i + 1,
+            title: `Lesson ${i + 1}: ${lessonTopics
+              .map((t: { topicName: any; }) => t.topicName)
+              .join(' & ')}`,
+            date: new Date(
+              Date.now() + i * 7 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+            status: i === 0 ? 'upcoming' : 'planned',
+            brief: lessonTopics.map((t: { topicDescription: any; }) => t.topicDescription).join('\n'),
+            topics: lessonTopics.map((t: { order: any; topicName: any; topicDescription: any; type: any; }) => ({
+              id: `topic-${t.order}`,
+              topicName: t.topicName,
+              topicDescription: t.topicDescription,
+              order: t.order,
+              status: 'not started',
+              type: t.type,
+              isUserAdded: false,
+            })),
+          });
+        }
+
+        // Save the lessons to Firestore
+        const studentRef = await firestore
+          .collection('users')
+          .doc(userId)
+          .collection('students')
+          .add({
+            ...studentData,
+            completedLessons: 0,
+            startDate: now,
+            createdAt: now,
+            updatedAt: now,
+            currentLevel: studentData.level, // Store the current level
+          });
+
+        const subjectRef = studentRef.collection('subject');
+        const languageRef = subjectRef.doc(languageKey);
+        const levelsRef = languageRef.collection('levels');
+
+        await levelsRef.doc(studentData.level).set({
+          lessons,
+          startDate: now,
+          completedTopics: 0,
+          totalTopics: sortedTopics.length,
         });
+
+        return NextResponse.json({
+          success: true,
+          studentId: studentRef.id,
+        });
+      } else {
+        return NextResponse.json(
+          { error: 'Curriculum data not found for the selected level' },
+          { status: 400 }
+        );
       }
-
-      // Save the lessons to Firestore
-      await levelsRef.doc(studentData.level).set({
-        lessons,
-        startDate: now,
-        completedTopics: 0,
-        totalTopics: sortedTopics.length,
-      });
+    } else {
+      return NextResponse.json(
+        { error: 'Curriculum not found for the selected language' },
+        { status: 400 }
+      );
     }
-
-    return NextResponse.json({
-      success: true,
-      studentId: studentRef.id,
-    });
 
   } catch (error) {
     console.error('Error adding student:', error);

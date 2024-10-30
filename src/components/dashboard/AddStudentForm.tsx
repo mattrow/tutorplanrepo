@@ -36,18 +36,7 @@ const LANGUAGE_LEVELS = [
   }
 ];
 
-const LANGUAGES = [
-  'English',
-  'Spanish',
-  'French',
-  'German',
-  'Italian',
-  'Portuguese',
-  'Japanese',
-  'Chinese',
-  'Korean',
-  'Russian'
-];
+const LANGUAGES = ['English', 'Portuguese'];
 
 const NATIVE_LANGUAGES = [
   'English',
