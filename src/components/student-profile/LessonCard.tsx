@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Lesson } from '@/types/lesson';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { Sparkles, BookOpen, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { CSSTransition, SwitchTransition } from 'react-transition-group'
 
 interface LessonCardProps {
   lesson: Lesson;
@@ -34,9 +35,40 @@ const LessonCard = ({
   const [showForm, setShowForm] = useState(false);
   const [newTopicName, setNewTopicName] = useState('');
   const [newTopicDescription, setNewTopicDescription] = useState('');
-  const [newTopicType, setNewTopicType] = useState<'communication' | 'vocabulary' | 'grammar' | ''>('');
+  const [newTopicType, setNewTopicType] = useState<
+    'communication' | 'vocabulary' | 'grammar' | ''
+  >('');
 
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // New state variables for message switching
+  const messages = ['Generating...', "It's a big file..."];
+  const [messageIndex, setMessageIndex] = useState(0);
+  const [showAlternateMessage, setShowAlternateMessage] = useState(false);
+
+  const nodeRef = useRef(null);
+
+  useEffect(() => {
+    let initialTimer: NodeJS.Timeout;
+    let messageTimer: NodeJS.Timeout;
+    if (isGenerating) {
+      initialTimer = setTimeout(() => {
+        setShowAlternateMessage(true);
+        // Start toggling messages every few seconds
+        messageTimer = setInterval(() => {
+          setMessageIndex((prevIndex) => (prevIndex + 1) % messages.length);
+        }, 7000); // Switch messages every 3 seconds
+      }, 7000); // Wait 5 seconds before starting to alternate messages
+    }
+
+    return () => {
+      // Cleanup timers when isGenerating changes or component unmounts
+      clearTimeout(initialTimer);
+      clearInterval(messageTimer);
+      setShowAlternateMessage(false);
+      setMessageIndex(0);
+    };
+  }, [isGenerating]);
 
   const handleClick = () => {
     if (isClickable) {
@@ -109,7 +141,7 @@ const LessonCard = ({
 
   return (
     <div
-      className={`bg-white rounded-lg p-4 shadow-sm border border-gray-200 flex`} 
+      className={`bg-white rounded-lg p-4 shadow-sm border border-gray-200 flex`}
     >
       {/* Left Side: Topics */}
       <div className="flex-1">
@@ -131,7 +163,10 @@ const LessonCard = ({
             ))}
 
             {showForm ? (
-              <div className="p-2 border border-gray-200 rounded-lg" onClick={(e) => e.stopPropagation()}>
+              <div
+                className="p-2 border border-gray-200 rounded-lg"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <form onSubmit={handleFormSubmit} className="space-y-2">
                   <input
                     type="text"
@@ -144,7 +179,9 @@ const LessonCard = ({
                   <textarea
                     placeholder="Topic Description"
                     value={newTopicDescription}
-                    onChange={(e) => setNewTopicDescription(e.target.value)}
+                    onChange={(e) =>
+                      setNewTopicDescription(e.target.value)
+                    }
                     className="w-full p-2 border border-gray-300 rounded"
                     required
                   />
@@ -153,7 +190,12 @@ const LessonCard = ({
                   <select
                     value={newTopicType}
                     onChange={(e) =>
-                      setNewTopicType(e.target.value as 'communication' | 'vocabulary' | 'grammar')
+                      setNewTopicType(
+                        e.target.value as
+                          | 'communication'
+                          | 'vocabulary'
+                          | 'grammar'
+                      )
                     }
                     className="w-full p-2 border border-gray-300 rounded"
                     required
@@ -168,7 +210,10 @@ const LessonCard = ({
 
                   <div className="flex gap-2">
                     <Button type="submit">Add</Button>
-                    <Button type="button" onClick={() => setShowForm(false)}>
+                    <Button
+                      type="button"
+                      onClick={() => setShowForm(false)}
+                    >
                       Cancel
                     </Button>
                   </div>
@@ -198,7 +243,20 @@ const LessonCard = ({
             className="bg-gray-300 text-gray-500 flex items-center w-52"
             onClick={(e) => e.stopPropagation()}
           >
-            Generating...
+            <SwitchTransition mode="out-in">
+              <CSSTransition
+                nodeRef={nodeRef}
+                key={showAlternateMessage ? messageIndex : -1}
+                timeout={500}
+                classNames="fade"
+              >
+                <span ref={nodeRef}>
+                  {showAlternateMessage
+                    ? messages[messageIndex]
+                    : 'Generating...'}
+                </span>
+              </CSSTransition>
+            </SwitchTransition>
             <svg
               className="w-4 h-4 ml-2 animate-spin"
               xmlns="http://www.w3.org/2000/svg"
@@ -237,7 +295,6 @@ const LessonCard = ({
             <Button
               onClick={handleGenerateLesson}
               className="bg-red-500 text-white hover:bg-red-600 flex items-center w-52"
-              // onClick={(e) => e.stopPropagation()}
             >
               <RefreshCw className="w-4 h-4 mr-2" />
               Regenerate Lesson
@@ -247,7 +304,6 @@ const LessonCard = ({
           <Button
             onClick={handleGenerateLesson}
             className="bg-blue-500 text-white hover:bg-blue-600 flex items-center w-52"
-            // onClick={(e) => e.stopPropagation()}
           >
             <Sparkles className="w-4 h-4 mr-2" />
             Generate Lesson

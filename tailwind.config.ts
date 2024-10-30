@@ -64,8 +64,29 @@ const config: Config = {
   			'satoshi-black': ['Satoshi-Black', 'sans-serif'],
   			'satoshi-variable': ['Satoshi-Variable', 'sans-serif'],
   		},
-  	}
+  		typography: {
+  			DEFAULT: {
+  				css: {
+  					'h1, h2, h3': {
+  						color: '#1a202c',
+  					},
+  					'p': {
+  						marginTop: '1.5em',
+  						marginBottom: '1.5em',
+  					},
+  					'ul': {
+  						marginTop: '1.5em',
+  						marginBottom: '1.5em',
+  					},
+  					'li': {
+  						marginTop: '0.5em',
+  						marginBottom: '0.5em',
+  					},
+  				},
+  			},
+  		},
+  	},
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 };
 export default config;
