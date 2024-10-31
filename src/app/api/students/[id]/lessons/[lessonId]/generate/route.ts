@@ -10,8 +10,9 @@ export async function POST(
   { params }: { params: { id: string; lessonId: string } }
 ) {
   try {
-    // Extract studentId from params
+    // Extract studentId and lessonId from params
     const studentId = params.id;
+    const lessonId = params.lessonId;
 
     // Verify Firebase token
     const authHeader = request.headers.get('Authorization');
@@ -50,7 +51,7 @@ export async function POST(
     });
 
     // Collect all the promises
-    const promises = topics.map(async (topic: { topicName: any; id: any; }) => {
+    const promises = topics.map(async (topic: any) => {
       // Updated OpenAI prompt with detailed instructions
       const prompt = `You are an expert ${studentLearningLanguage} tutor specializing in teaching students at the ${studentLevel} level. Your student's native language is ${studentNativeLanguage}.
 
@@ -66,7 +67,7 @@ Generate detailed online one-to-one lesson content for an adult learner on the t
 Provide the following information in **JSON format only**, with keys exactly as specified:
 
 {
-  "id": "${topic.id}",
+  "id": "${topic.id}", // Include the original topic ID
   "title": "Title of the topic",
   "introduction": {
     "explanation": "An explanation of the topic in English suitable for ${studentLevel} level.",
@@ -185,18 +186,21 @@ Ensure the JSON is properly formatted, uses double quotes for keys and strings, 
     const generatedTopics = await Promise.all(promises);
 
     // Save the generated lesson to Firestore
-    const lessonRef = studentRef.collection('lessons').doc(params.lessonId);
+    const lessonRef = studentRef.collection('lessons').doc(lessonId);
 
     await lessonRef.set(
       {
-        id: params.lessonId,
+        id: lessonId,
         studentId: studentId,
         ownerId: userId,
+        subject: studentData?.language?.toLowerCase() || 'default_subject',
+        level: studentData?.level || 'default_level',
         generated: true,
         generatedTopics,
+        topics, // Include the original topics with IDs
         public: false,
         createdAt: new Date().toISOString(),
-        title: `Lesson ${params.lessonId}`,
+        title: `Lesson ${lessonId}`,
       },
       { merge: true }
     );

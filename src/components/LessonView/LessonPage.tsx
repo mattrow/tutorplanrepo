@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CheckCircle,
   ThumbsUp,
@@ -18,8 +18,9 @@ import InDepthSection from './TopicSections/InDepthSection';
 import ExamplesSection from './TopicSections/ExamplesSection';
 import ExercisesSection from './TopicSections/ExercisesSection';
 import TopicNavigation from './TopicSections/TopicNavigation';
-import { GeneratedTopic } from '@/types/lesson';
+import { GeneratedTopic, Topic } from '@/types/lesson';
 import { Lesson } from '@/types/lesson';
+import { useAuth } from '@/hooks/useAuth';
 
 interface TopicStatus {
   completed: boolean;
@@ -118,6 +119,9 @@ const TopicModule = ({
 
 const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) => {
   const router = useRouter();
+  // const { getToken } = useAuth();
+
+  // Initialize topic statuses based on generatedTopics
   const [topicStatuses, setTopicStatuses] = useState<Record<string, TopicStatus>>(() => {
     const generatedTopics = lesson.generatedTopics ?? [];
     return generatedTopics.reduce(
@@ -136,9 +140,37 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
     }));
   };
 
-  const allTopicsCompleted = Object.values(topicStatuses).every(
-    (status) => status.completed
+  // Check if all topics are completed and understood status is set
+  const canCompleteLesson = Object.values(topicStatuses).some(
+    (status) => status.completed && status.understood !== null
   );
+
+  // Function to handle lesson completion
+  const handleCompleteLesson = async () => {
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(
+        `/api/students/${lesson.studentId}/lessons/${lesson.id}/complete`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ updatedTopics: lesson.topics }),
+        }
+      );
+
+      if (!response.ok) {
+        console.error('Failed to complete lesson');
+      } else {
+        console.log('Lesson completed successfully');
+        // Optionally, update local state or redirect
+      }
+    } catch (error) {
+      console.error('Error completing lesson:', error);
+    }
+  };
 
   // Function to copy lesson URL
   const copyLessonUrl = () => {
@@ -148,8 +180,6 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
   };
 
   const [generatingHomework, setGeneratingHomework] = useState(false);
-
-  // Add state variable to track homework generation status
   const [homeworkGenerated, setHomeworkGenerated] = useState(false);
 
   const handleGenerateHomework = async () => {
@@ -181,7 +211,7 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
       const disposition = response.headers.get('Content-Disposition');
       let filename = 'homework.pdf'; // Default filename
       if (disposition && disposition.includes('filename=')) {
-        const matches = /filename[^;=\n]*=((['"]).*?\[^;\n]*)/.exec(disposition);
+        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
         if (matches != null && matches[1]) {
           filename = matches[1].replace(/['"]/g, '');
         }
@@ -382,6 +412,19 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
           />
         ))}
       </div>
+
+      {/* Complete Lesson Button */}
+      {canCompleteLesson && (
+        <div className="fixed bottom-4 right-4">
+          <Button
+            onClick={handleCompleteLesson}
+            className="bg-green-500 text-white hover:bg-green-600 font-bold rounded-full px-6 py-3 flex items-center gap-2"
+          >
+            <CheckSquare className="w-5 h-5" />
+            Complete Lesson
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

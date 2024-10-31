@@ -59,13 +59,18 @@ export interface Topic {
   export interface Lesson {
     id: string;
     studentId: string;
-    number: number;
+    ownerId: string;
+    number?: number;
     title: string;
-    date: string;
-    status: string;
+    date?: string;
+    status?: string;
     topics: Topic[];
-    brief: string;
+    brief?: string;
     public: boolean;
-    generated?: boolean;
-    generatedTopics?: GeneratedTopic[];
+    generated: boolean;
+    generatedTopics: GeneratedTopic[];
+    createdAt: string;
+    updatedAt?: string;
+    subject: string;
+    level: string;
   }
