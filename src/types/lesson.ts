@@ -58,12 +58,14 @@ export interface Topic {
   
   export interface Lesson {
     id: string;
+    studentId: string;
     number: number;
     title: string;
     date: string;
     status: string;
     topics: Topic[];
     brief: string;
+    public: boolean;
     generated?: boolean;
     generatedTopics?: GeneratedTopic[];
   }

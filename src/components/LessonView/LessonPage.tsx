@@ -18,6 +18,7 @@ import ExamplesSection from './TopicSections/ExamplesSection';
 import ExercisesSection from './TopicSections/ExercisesSection';
 import TopicNavigation from './TopicSections/TopicNavigation';
 import { GeneratedTopic } from '@/types/lesson';
+import { Lesson } from '@/types/lesson';
 
 interface TopicStatus {
   completed: boolean;
@@ -25,12 +26,7 @@ interface TopicStatus {
 }
 
 interface LessonPageProps {
-  lesson: {
-    generatedTopics: GeneratedTopic[];
-    title: string;
-    public: boolean;
-    // Add other lesson properties as needed
-  };
+  lesson: Lesson;
   user: any;
   onShareLesson: () => void;
   sharing: boolean;
@@ -121,15 +117,16 @@ const TopicModule = ({
 
 const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) => {
   const router = useRouter();
-  const [topicStatuses, setTopicStatuses] = useState<Record<string, TopicStatus>>(() =>
-    lesson.generatedTopics.reduce(
+  const [topicStatuses, setTopicStatuses] = useState<Record<string, TopicStatus>>(() => {
+    const generatedTopics = lesson.generatedTopics ?? [];
+    return generatedTopics.reduce(
       (acc, topic) => ({
         ...acc,
         [topic.id]: { completed: false, understood: null },
       }),
       {}
-    )
-  );
+    );
+  });
 
   const updateTopicStatus = (topicId: string, status: Partial<TopicStatus>) => {
     setTopicStatuses((prev) => ({
@@ -147,6 +144,50 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
     const lessonUrl = window.location.href;
     navigator.clipboard.writeText(lessonUrl);
     alert('Lesson link copied to clipboard!');
+  };
+
+  const [generatingHomework, setGeneratingHomework] = useState(false);
+
+  const handleGenerateHomework = async () => {
+    if (!user) {
+      // Handle unauthenticated case
+      return;
+    }
+
+    setGeneratingHomework(true);
+
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(
+        `/api/students/${lesson.studentId}/lessons/${lesson.id}/homework`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(new Blob([blob]));
+        
+        // Create a link to download the PDF
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `${lesson.title}-Homework.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode?.removeChild(link);
+      } else {
+        console.error('Failed to generate homework');
+      }
+    } catch (error) {
+      console.error('Error generating homework:', error);
+    } finally {
+      setGeneratingHomework(false);
+    }
   };
 
   return (
@@ -211,7 +252,7 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
 
       {/* Topics */}
       <div className="space-y-6">
-        {lesson.generatedTopics.map((topic) => (
+        {lesson.generatedTopics && lesson.generatedTopics.map((topic) => (
           <TopicModule
             key={topic.id}
             topic={topic}
@@ -232,12 +273,40 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
           Complete Lesson
         </Button>
         <Button
-          disabled={!allTopicsCompleted}
-          onClick={() => {/* handle homework generation */}}
+          disabled={generatingHomework}
+          onClick={handleGenerateHomework}
           className="bg-white text-[#396afc] hover:bg-gray-50 font-satoshi-bold rounded-full flex items-center gap-2 border-2 border-[#396afc]"
         >
-          <HomeIcon className="w-5 h-5" />
-          Generate Homework
+          {generatingHomework ? (
+            <>
+              <svg
+                className="animate-spin -ml-1 mr-2 h-5 w-5 text-[#396afc]"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8H4z"
+                />
+              </svg>
+              Generating...
+            </>
+          ) : (
+            <>
+              <HomeIcon className="w-5 h-5" />
+              Generate Homework
+            </>
+          )}
         </Button>
       </div>
     </div>
