@@ -9,20 +9,35 @@ export async function GET(
     const studentId = params.id;
     const lessonId = params.lessonId;
 
+    console.log(`[${new Date().toISOString()}] Received GET request for lesson:`, { studentId, lessonId });
+
     let userId: string | null = null;
 
     // Attempt to authenticate the user
     const authHeader = request.headers.get('Authorization');
+    console.log('Authorization header:', authHeader);
+
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.split('Bearer ')[1];
+      console.log('Token from header:', token);
+
       try {
         const decodedToken = await adminAuth.verifyIdToken(token);
         userId = decodedToken.uid;
+        console.log('Token verified successfully, userId:', userId);
       } catch (error) {
         console.error('Error verifying token:', error);
-        // If token is invalid, proceed as unauthenticated
+        // Proceed as unauthenticated
       }
+    } else {
+      console.log('No valid Authorization header found, proceeding as unauthenticated');
     }
+
+    // Log the query parameters
+    console.log('Querying lessons collection group with:', {
+      'id ==': lessonId,
+      'studentId ==': studentId,
+    });
 
     // Directly access the lesson document
     const lessonRef = firestore
@@ -32,23 +47,39 @@ export async function GET(
       .limit(1);
 
     const lessonSnapshot = await lessonRef.get();
+    console.log('Lesson query results count:', lessonSnapshot.size);
 
     if (lessonSnapshot.empty) {
-      console.error('Lesson not found.');
+      console.error('Lesson not found with given id and studentId.');
       return NextResponse.json({ error: 'Lesson not found' }, { status: 404 });
     }
 
     const lessonDoc = lessonSnapshot.docs[0];
     const lessonData = lessonDoc.data();
 
+    console.log('Retrieved lesson data:', lessonData);
+
     // Get the ownerId from the lesson data
     const ownerId = lessonData.ownerId;
+    const isPublic = lessonData.public;
+
+    console.log('Access control info:', {
+      userId,
+      ownerId,
+      isPublic,
+    });
 
     // Check if the lesson is public or if the user is the owner
-    if (lessonData.public !== true && (!userId || userId !== ownerId)) {
+    if (isPublic !== true && (!userId || userId !== ownerId)) {
+      console.warn('Unauthorized access attempt.', {
+        userId,
+        ownerId,
+        isPublic,
+      });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    console.log('Lesson access granted, sending lesson data.');
     return NextResponse.json({ lesson: lessonData }, { status: 200 });
   } catch (error) {
     console.error('Error fetching lesson:', error);
@@ -56,6 +87,8 @@ export async function GET(
     let errorMessage = 'An unexpected error occurred';
     if (error instanceof Error) {
       errorMessage = error.message;
+    } else if (typeof error === 'string') {
+      errorMessage = error;
     }
 
     return NextResponse.json(
