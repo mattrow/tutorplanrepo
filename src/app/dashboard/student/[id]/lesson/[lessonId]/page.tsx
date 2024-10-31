@@ -1,14 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import LessonPage from '@/components/LessonView/LessonPage';
 import { useAuth } from '@/hooks/useAuth';
-import { useParams } from 'next/navigation';
 import Sidebar from '@/components/ui/Sidebar';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { Button } from '@/components/ui/button';
-import { Share2 } from 'lucide-react';
 
 export default function LessonViewPage() {
   const router = useRouter();
@@ -17,9 +14,21 @@ export default function LessonViewPage() {
   const [lessonData, setLessonData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [sharing, setSharing] = useState(false);
-  const [shareSuccess, setShareSuccess] = useState(false);
 
   useEffect(() => {
+    const fetchLessonData = async () => {
+      const authHeaders: Record<string, string> = {};
+
+      if (user) {
+        authHeaders['Authorization'] = `Bearer ${await user.getIdToken()}`;
+        authHeaders['Content-Type'] = 'application/json';
+      }
+
+      return fetch(`/api/students/${studentId}/lessons/${lessonId}`, {
+        headers: authHeaders,
+      });
+    };
+
     const fetchLesson = async () => {
       try {
         const response = await fetchLessonData();
@@ -36,26 +45,12 @@ export default function LessonViewPage() {
       }
     };
 
-    const fetchLessonData = async () => {
-      if (user) {
-        const token = await user.getIdToken();
-        return fetch(`/api/students/${studentId}/lessons/${lessonId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-      } else {
-        return fetch(`/api/students/${studentId}/lessons/${lessonId}`);
-      }
-    };
-
     fetchLesson();
   }, [user, studentId, lessonId]);
 
   const handleShareLesson = async () => {
     if (!user) {
-      // Redirect to login or show a message
+      // Handle unauthenticated case if necessary
       return;
     }
 
@@ -72,11 +67,12 @@ export default function LessonViewPage() {
       });
 
       if (response.ok) {
+        // Update lessonData to reflect the lesson is now public
+        setLessonData((prevData: any) => ({ ...prevData, public: true }));
+
         // Copy the lesson URL to clipboard
         const lessonUrl = `${window.location.origin}/dashboard/student/${studentId}/lesson/${lessonId}`;
         await navigator.clipboard.writeText(lessonUrl);
-        setShareSuccess(true);
-        // Optionally, show a toast notification
         alert('Lesson link copied to clipboard!');
       } else {
         console.error('Failed to make lesson public');
@@ -91,8 +87,8 @@ export default function LessonViewPage() {
   if (loading) {
     return (
       <div className="flex h-screen">
-        <Sidebar />
-        <div className="flex-1 ml-64">
+        {user && <Sidebar />}
+        <div className={`flex-1 ${user ? 'ml-64' : ''}`}>
           <LoadingSpinner />
         </div>
       </div>
@@ -102,30 +98,22 @@ export default function LessonViewPage() {
   if (!lessonData) {
     return (
       <div className="flex h-screen">
-        <Sidebar />
-        <div className="flex-1 ml-64 p-8">
-          Lesson not found.
-        </div>
+        {user && <Sidebar />}
+        <div className={`flex-1 ${user ? 'ml-64' : ''} p-8`}>Lesson not found.</div>
       </div>
     );
   }
 
   return (
     <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex-1 ml-64">
-        <LessonPage lesson={lessonData} />
-        {/* Share Button */}
-        <div className="fixed bottom-8 left-8">
-          <Button
-            onClick={handleShareLesson}
-            disabled={sharing || lessonData.public}
-            className="bg-[#396afc] text-white hover:bg-[#2948ff] font-satoshi-bold rounded-full flex items-center gap-2"
-          >
-            <Share2 className="w-5 h-5" />
-            {lessonData.public ? 'Lesson is Public' : 'Share Lesson'}
-          </Button>
-        </div>
+      {user && <Sidebar />}
+      <div className={`flex-1 ${user ? 'ml-64' : ''}`}>
+        <LessonPage
+          lesson={lessonData}
+          user={user}
+          onShareLesson={handleShareLesson}
+          sharing={sharing}
+        />
       </div>
     </div>
   );

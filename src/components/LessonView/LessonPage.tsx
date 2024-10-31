@@ -7,6 +7,8 @@ import {
   ArrowLeft,
   CheckSquare,
   HomeIcon,
+  Share2,
+  Link as LinkIcon,
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useRouter } from 'next/navigation';
@@ -26,8 +28,12 @@ interface LessonPageProps {
   lesson: {
     generatedTopics: GeneratedTopic[];
     title: string;
+    public: boolean;
     // Add other lesson properties as needed
   };
+  user: any;
+  onShareLesson: () => void;
+  sharing: boolean;
 }
 
 const TopicModule = ({
@@ -113,7 +119,7 @@ const TopicModule = ({
   );
 };
 
-const LessonPage = ({ lesson }: LessonPageProps) => {
+const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) => {
   const router = useRouter();
   const [topicStatuses, setTopicStatuses] = useState<Record<string, TopicStatus>>(() =>
     lesson.generatedTopics.reduce(
@@ -136,27 +142,71 @@ const LessonPage = ({ lesson }: LessonPageProps) => {
     (status) => status.completed
   );
 
+  // Function to copy lesson URL
+  const copyLessonUrl = () => {
+    const lessonUrl = window.location.href;
+    navigator.clipboard.writeText(lessonUrl);
+    alert('Lesson link copied to clipboard!');
+  };
+
   return (
     <div className="p-8 bg-[#f8f9fc] min-h-screen">
       {/* Back Button */}
-      <Button
-        onClick={() => router.back()}
-        variant="ghost"
-        className="text-gray-600 hover:bg-gray-100 mb-6 flex items-center"
-      >
-        <ArrowLeft className="w-5 h-5 mr-2" />
-        Back to Student
-      </Button>
+      {user && (
+        <Button
+          onClick={() => router.back()}
+          variant="ghost"
+          className="text-gray-600 hover:bg-gray-100 mb-6 flex items-center"
+        >
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          Back to Student
+        </Button>
+      )}
 
       {/* Header */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8">
-        <div className="flex items-center gap-4 mb-2">
-          <BookOpen className="w-6 h-6 text-[#396afc]" />
-          <h1 className="text-2xl font-bold text-gray-900">{lesson.title}</h1>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8 flex justify-between items-center">
+        <div>
+          <div className="flex items-center gap-4 mb-2">
+            <BookOpen className="w-6 h-6 text-[#396afc]" />
+            <h1 className="text-2xl font-bold text-gray-900">{lesson.title}</h1>
+          </div>
+          <p className="text-gray-600 ml-10">
+            Track progress and understanding as you cover each topic.
+          </p>
         </div>
-        <p className="text-gray-600 ml-10">
-          Track progress and understanding as you cover each topic.
-        </p>
+
+        {/* Share Button */}
+        <div>
+          {user ? (
+            lesson.public ? (
+              <Button
+                onClick={copyLessonUrl}
+                className="bg-green-500 text-white hover:bg-green-600 font-satoshi-bold rounded-full flex items-center gap-2"
+              >
+                <LinkIcon className="w-5 h-5" />
+                Copy Lesson URL
+              </Button>
+            ) : (
+              <Button
+                onClick={onShareLesson}
+                disabled={sharing}
+                className="bg-[#396afc] text-white hover:bg-[#2948ff] font-satoshi-bold rounded-full flex items-center gap-2"
+              >
+                <Share2 className="w-5 h-5" />
+                Share Lesson
+              </Button>
+            )
+          ) : lesson.public ? (
+            // For unauthenticated users viewing a public lesson
+            <Button
+              onClick={copyLessonUrl}
+              className="bg-green-500 text-white hover:bg-green-600 font-satoshi-bold rounded-full flex items-center gap-2"
+            >
+              <LinkIcon className="w-5 h-5" />
+              Copy Lesson URL
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       {/* Topics */}
