@@ -15,8 +15,62 @@ const geistMono = localFont({
 
 
 export const metadata: Metadata = {
-  title: "Jobl.io",
-  description: "AI Resume Tracking and Interview Prep",
+  title: "TutorPlan - AI-Powered Lesson Planning",
+  description: "Create personalized learning paths and lesson plans instantly with AI. Keep your students motivated with tailored educational content generated with just one click.",
+  icons: {
+    icon: [
+      {
+        url: '/favicon.ico',
+        sizes: 'any',
+      },
+      {
+        url: '/icon.png',
+        type: 'image/png',
+        sizes: '512x512',
+      },
+    ],
+    apple: {
+      url: '/apple-icon.png',
+      type: 'image/png',
+      sizes: '180x180',
+    },
+  },
+  keywords: [
+    'lesson planning',
+    'AI teaching assistant',
+    'education technology',
+    'personalized learning',
+    'teaching tools',
+    'curriculum planning',
+    'educational AI',
+    'student engagement',
+    'learning paths',
+    'tutoring platform'
+  ],
+  authors: [{ name: 'TutorPlan' }],
+  openGraph: {
+    title: 'TutorPlan - AI-Powered Lesson Planning',
+    description: 'Create personalized learning paths and lesson plans instantly with AI. Keep your students motivated with tailored educational content.',
+    url: 'https://tutorplan.co', // Update this with your actual domain
+    siteName: 'TutorPlan',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'TutorPlan - Personalized lessons with one click'
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'TutorPlan - AI-Powered Lesson Planning',
+    description: 'Create personalized learning paths and lesson plans instantly with AI. Keep your students motivated with tailored educational content.',
+    images: ['/og-image.png'],
+    creator: '@tutorplan', // Update this with your actual Twitter handle if you have one
+  },
 };
 
 export default function RootLayout({

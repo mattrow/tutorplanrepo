@@ -6,41 +6,48 @@ export async function GET(
   { params }: { params: { id: string; lessonId: string } }
 ) {
   try {
-    // Verify the Firebase token
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.split('Bearer ')[1];
-    const decodedToken = await adminAuth.verifyIdToken(token);
-    const userId = decodedToken.uid;
-
     const studentId = params.id;
     const lessonId = params.lessonId;
 
-    console.log('User ID:', userId);
-    console.log('Student ID:', studentId);
-    console.log('Lesson ID:', lessonId);
+    let userId: string | null = null;
+
+    // Attempt to authenticate the user
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.split('Bearer ')[1];
+      try {
+        const decodedToken = await adminAuth.verifyIdToken(token);
+        userId = decodedToken.uid;
+      } catch (error) {
+        console.error('Error verifying token:', error);
+        // If token is invalid, proceed as unauthenticated
+      }
+    }
 
     // Directly access the lesson document
     const lessonRef = firestore
-      .collection('users')
-      .doc(userId)
-      .collection('students')
-      .doc(studentId)
-      .collection('lessons')
-      .doc(lessonId);
+      .collectionGroup('lessons')
+      .where('id', '==', lessonId)
+      .where('studentId', '==', studentId)
+      .limit(1);
 
-    const lessonDoc = await lessonRef.get();
-    console.log('Lesson Document Exists:', lessonDoc.exists);
+    const lessonSnapshot = await lessonRef.get();
 
-    if (!lessonDoc.exists) {
-      console.error('Lesson not found at the expected path.');
+    if (lessonSnapshot.empty) {
+      console.error('Lesson not found.');
       return NextResponse.json({ error: 'Lesson not found' }, { status: 404 });
     }
 
+    const lessonDoc = lessonSnapshot.docs[0];
     const lessonData = lessonDoc.data();
+
+    // Get the ownerId from the lesson data
+    const ownerId = lessonData.ownerId;
+
+    // Check if the lesson is public or if the user is the owner
+    if (lessonData.public !== true && (!userId || userId !== ownerId)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     return NextResponse.json({ lesson: lessonData }, { status: 200 });
   } catch (error) {
