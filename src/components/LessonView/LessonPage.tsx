@@ -9,6 +9,7 @@ import {
   HomeIcon,
   Share2,
   Link as LinkIcon,
+  Download,
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useRouter } from 'next/navigation';
@@ -148,14 +149,16 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
 
   const [generatingHomework, setGeneratingHomework] = useState(false);
 
+  // Add state variable to track homework generation status
+  const [homeworkGenerated, setHomeworkGenerated] = useState(false);
+
   const handleGenerateHomework = async () => {
     if (!user) {
-      // Handle unauthenticated case
+      // Handle unauthenticated case if necessary
       return;
     }
 
     setGeneratingHomework(true);
-
     try {
       const token = await user.getIdToken();
       const response = await fetch(
@@ -164,29 +167,97 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
           },
         }
       );
 
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(new Blob([blob]));
-        
-        // Create a link to download the PDF
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `${lesson.title}-Homework.pdf`);
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode?.removeChild(link);
-      } else {
+      if (!response.ok) {
         console.error('Failed to generate homework');
+        // Handle error appropriately
+        return;
       }
+
+      // Extract filename from Content-Disposition header
+      const disposition = response.headers.get('Content-Disposition');
+      let filename = 'homework.pdf'; // Default filename
+      if (disposition && disposition.includes('filename=')) {
+        const matches = /filename[^;=\n]*=((['"]).*?\[^;\n]*)/.exec(disposition);
+        if (matches != null && matches[1]) {
+          filename = matches[1].replace(/['"]/g, '');
+        }
+      }
+
+      // Get the blob from the response
+      const blob = await response.blob();
+
+      // Create a link and trigger the download
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename; // Use the extracted filename
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      // Set homework as generated
+      setHomeworkGenerated(true);
     } catch (error) {
       console.error('Error generating homework:', error);
+      // Handle error appropriately
     } finally {
       setGeneratingHomework(false);
+    }
+  };
+
+  // Function to download homework without regenerating
+  const handleDownloadHomework = async () => {
+    if (!user) {
+      return;
+    }
+
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(
+        `/api/students/${lesson.studentId}/lessons/${lesson.id}/homework`,
+        {
+          method: 'POST', // Assuming the same endpoint
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        console.error('Failed to download homework');
+        // Handle error appropriately
+        return;
+      }
+
+      // Extract filename from Content-Disposition header
+      const disposition = response.headers.get('Content-Disposition');
+      let filename = 'homework.pdf'; // Default filename
+      if (disposition && disposition.includes('filename=')) {
+        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
+        if (matches != null && matches[1]) {
+          filename = matches[1].replace(/['"]/g, '');
+        }
+      }
+
+      // Get the blob from the response
+      const blob = await response.blob();
+
+      // Create a link and trigger the download
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename; // Use the extracted filename
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading homework:', error);
     }
   };
 
@@ -205,48 +276,98 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
       )}
 
       {/* Header */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8 flex justify-between items-center">
-        <div>
-          <div className="flex items-center gap-4 mb-2">
-            <BookOpen className="w-6 h-6 text-[#396afc]" />
-            <h1 className="text-2xl font-bold text-gray-900">{lesson.title}</h1>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8">
+        <div className="flex justify-between items-center">
+          <div>
+            <div className="flex items-center gap-4 mb-2">
+              <BookOpen className="w-6 h-6 text-[#396afc]" />
+              <h1 className="text-2xl font-bold text-gray-900">{lesson.title}</h1>
+            </div>
+            <p className="text-gray-600 ml-10">
+              Track progress and understanding as you cover each topic.
+            </p>
           </div>
-          <p className="text-gray-600 ml-10">
-            Track progress and understanding as you cover each topic.
-          </p>
-        </div>
 
-        {/* Share Button */}
-        <div>
-          {user ? (
-            lesson.public ? (
+          {/* Buttons */}
+          <div className="flex items-center gap-2">
+            {/* Share Button */}
+            {user ? (
+              lesson.public ? (
+                <Button
+                  onClick={copyLessonUrl}
+                  className="flex-1 bg-green-500 text-white hover:bg-green-600 font-satoshi-bold rounded-full flex items-center justify-center gap-2"
+                >
+                  <LinkIcon className="w-5 h-5" />
+                  Copy Lesson URL
+                </Button>
+              ) : (
+                <Button
+                  onClick={onShareLesson}
+                  disabled={sharing}
+                  className="flex-1 bg-[#396afc] text-white hover:bg-[#2948ff] font-satoshi-bold rounded-full flex items-center justify-center gap-2"
+                >
+                  <Share2 className="w-5 h-5" />
+                  Share Lesson
+                </Button>
+              )
+            ) : lesson.public ? (
+              // For unauthenticated users viewing a public lesson
               <Button
                 onClick={copyLessonUrl}
-                className="bg-green-500 text-white hover:bg-green-600 font-satoshi-bold rounded-full flex items-center gap-2"
+                className="flex-1 bg-green-500 text-white hover:bg-green-600 font-satoshi-bold rounded-full flex items-center justify-center gap-2"
               >
                 <LinkIcon className="w-5 h-5" />
                 Copy Lesson URL
               </Button>
-            ) : (
-              <Button
-                onClick={onShareLesson}
-                disabled={sharing}
-                className="bg-[#396afc] text-white hover:bg-[#2948ff] font-satoshi-bold rounded-full flex items-center gap-2"
-              >
-                <Share2 className="w-5 h-5" />
-                Share Lesson
-              </Button>
-            )
-          ) : lesson.public ? (
-            // For unauthenticated users viewing a public lesson
+            ) : null}
+
+            {/* Generate/Download Homework Button */}
             <Button
-              onClick={copyLessonUrl}
-              className="bg-green-500 text-white hover:bg-green-600 font-satoshi-bold rounded-full flex items-center gap-2"
+              disabled={generatingHomework}
+              onClick={homeworkGenerated ? handleDownloadHomework : handleGenerateHomework}
+              className={`flex-1 ${
+                homeworkGenerated
+                  ? 'bg-white text-[#396afc] border-2 border-[#396afc] hover:bg-gray-100'
+                  : 'bg-[#396afc] text-white hover:bg-[#2948ff]'
+              } font-satoshi-bold rounded-full flex items-center justify-center gap-2`}
             >
-              <LinkIcon className="w-5 h-5" />
-              Copy Lesson URL
+              {generatingHomework ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-5 w-5 text-current"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8H4z"
+                    />
+                  </svg>
+                  Generating...
+                </>
+              ) : homeworkGenerated ? (
+                <>
+                  <Download className="w-5 h-5" />
+                  Download Homework
+                </>
+              ) : (
+                <>
+                  <HomeIcon className="w-5 h-5" />
+                  Generate Homework
+                </>
+              )}
             </Button>
-          ) : null}
+          </div>
         </div>
       </div>
 
@@ -260,54 +381,6 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
             onStatusChange={(status) => updateTopicStatus(topic.id, status)}
           />
         ))}
-      </div>
-
-      {/* Action Buttons */}
-      <div className="fixed bottom-8 right-8 flex gap-4">
-        <Button
-          disabled={!allTopicsCompleted}
-          onClick={() => {/* handle completion */}}
-          className="bg-[#396afc] text-white hover:bg-[#2948ff] font-satoshi-bold rounded-full flex items-center gap-2"
-        >
-          <CheckSquare className="w-5 h-5" />
-          Complete Lesson
-        </Button>
-        <Button
-          disabled={generatingHomework}
-          onClick={handleGenerateHomework}
-          className="bg-white text-[#396afc] hover:bg-gray-50 font-satoshi-bold rounded-full flex items-center gap-2 border-2 border-[#396afc]"
-        >
-          {generatingHomework ? (
-            <>
-              <svg
-                className="animate-spin -ml-1 mr-2 h-5 w-5 text-[#396afc]"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v8H4z"
-                />
-              </svg>
-              Generating...
-            </>
-          ) : (
-            <>
-              <HomeIcon className="w-5 h-5" />
-              Generate Homework
-            </>
-          )}
-        </Button>
       </div>
     </div>
   );
