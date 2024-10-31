@@ -9,15 +9,6 @@ export async function GET(
     const studentId = params.id;
     const lessonId = params.lessonId;
 
-    const authHeader = request.headers.get('Authorization');
-    let userId = null;
-
-    if (authHeader?.startsWith('Bearer ')) {
-      const token = authHeader.split('Bearer ')[1];
-      const decodedToken = await adminAuth.verifyIdToken(token);
-      userId = decodedToken.uid;
-    }
-
     const lessonSnapshot = await firestore
       .collectionGroup('lessons')
       .where('id', '==', lessonId)
@@ -38,6 +29,15 @@ export async function GET(
       return NextResponse.json({ error: 'Owner not found' }, { status: 404 });
     }
 
+    const authHeader = request.headers.get('Authorization');
+    let userId = null;
+
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.split('Bearer ')[1];
+      const decodedToken = await adminAuth.verifyIdToken(token);
+      userId = decodedToken.uid;
+    }
+
     if (lessonData.public !== true && (!userId || userId !== ownerId)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -45,8 +45,15 @@ export async function GET(
     return NextResponse.json({ lesson: lessonData }, { status: 200 });
   } catch (error) {
     console.error('Error fetching lesson:', error);
+
+    let errorMessage = 'An unexpected error occurred';
+
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+
     return NextResponse.json(
-      { error: 'Failed to fetch lesson' },
+      { error: 'Failed to fetch lesson', details: errorMessage },
       { status: 500 }
     );
   }
