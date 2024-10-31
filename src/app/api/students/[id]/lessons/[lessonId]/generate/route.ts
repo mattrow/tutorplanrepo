@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, firestore } from '@/firebase/admin';
 import OpenAI from 'openai';
 
+export const maxDuration = 120; // 120 seconds (2 minutes)
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string; lessonId: string } }
