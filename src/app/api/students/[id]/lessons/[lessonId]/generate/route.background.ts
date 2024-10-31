@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { adminAuth, firestore } from '@/firebase/admin';
 import OpenAI from 'openai';
 
@@ -6,6 +6,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string; lessonId: string } }
 ) {
+  let userId: string | null = null;
+
   try {
     // Extract studentId from params
     const studentId = params.id;
@@ -13,12 +15,12 @@ export async function POST(
     // Verify Firebase token
     const authHeader = request.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return; // Do not send a response
     }
 
     const token = authHeader.split('Bearer ')[1];
     const decodedToken = await adminAuth.verifyIdToken(token);
-    const userId = decodedToken.uid;
+    userId = decodedToken.uid;
 
     // Parse request body
     const { topics } = await request.json();
@@ -33,8 +35,14 @@ export async function POST(
     const studentDoc = await studentRef.get();
 
     if (!studentDoc.exists) {
-      return NextResponse.json({ error: 'Student not found' }, { status: 404 });
+      // Student not found, exit function
+      return;
     }
+
+    // Update lesson document to indicate that generation is in progress
+    const lessonRef = studentRef.collection('lessons').doc(params.lessonId);
+
+    await lessonRef.update({ status: 'generating' });
 
     const studentData = studentDoc.data();
     const studentLevel = studentData?.level || 'A1'; // Default to 'A1' if level not found
@@ -159,10 +167,7 @@ Ensure the JSON is properly formatted, uses double quotes for keys and strings, 
         content = content.substring(firstBraceIndex, lastBraceIndex + 1).trim();
       } else {
         console.error('JSON content not found in the response.');
-        return NextResponse.json(
-          { error: 'JSON content not found in the response.' },
-          { status: 500 }
-        );
+        return; // Do not send a response
       }
 
       // Log the content for debugging
@@ -174,10 +179,7 @@ Ensure the JSON is properly formatted, uses double quotes for keys and strings, 
         parsedContent = JSON.parse(content);
       } catch (e) {
         console.error('Failed to parse OpenAI response as JSON:', e);
-        return NextResponse.json(
-          { error: 'Failed to parse OpenAI response' },
-          { status: 500 }
-        );
+        return; // Do not send a response
       }
 
       generatedTopics.push({
@@ -191,11 +193,10 @@ Ensure the JSON is properly formatted, uses double quotes for keys and strings, 
     }
 
     // Save the generated lesson to Firestore
-    const lessonRef = studentRef.collection('lessons').doc(params.lessonId);
-
     await lessonRef.set(
       {
         generated: true,
+        status: 'generated',
         ownerId: userId,
         generatedTopics,
         public: false,
@@ -205,12 +206,22 @@ Ensure the JSON is properly formatted, uses double quotes for keys and strings, 
       { merge: true }
     );
 
-    return NextResponse.json({ success: true });
+    // No response is sent
   } catch (error) {
     console.error('Error generating lesson:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate lesson' },
-      { status: 500 }
-    );
+
+    if (userId) {
+      // Optionally, update the lesson document to indicate an error
+      const studentRef = firestore
+        .collection('users')
+        .doc(userId)
+        .collection('students')
+        .doc(params.id);
+
+      const lessonRef = studentRef.collection('lessons').doc(params.lessonId);
+
+      await lessonRef.update({ status: 'error', errorMessage: (error as Error).message });
+    }
+    // No response is sent
   }
 }

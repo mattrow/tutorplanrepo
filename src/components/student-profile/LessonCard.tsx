@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { Sparkles, BookOpen, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { CSSTransition, SwitchTransition } from 'react-transition-group'
+import { CSSTransition, SwitchTransition } from 'react-transition-group';
+import { db } from '@/firebase/config';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 interface LessonCardProps {
   lesson: Lesson;
@@ -42,7 +44,7 @@ const LessonCard = ({
   const [isGenerating, setIsGenerating] = useState(false);
 
   // New state variables for message switching
-  const messages = ["It's a big file...",'Generating...',];
+  const messages = ["It's a big file...", 'Generating...'];
   const [messageIndex, setMessageIndex] = useState(0);
   const [showAlternateMessage, setShowAlternateMessage] = useState(false);
 
@@ -57,8 +59,8 @@ const LessonCard = ({
         // Start toggling messages every few seconds
         messageTimer = setInterval(() => {
           setMessageIndex((prevIndex) => (prevIndex + 1) % messages.length);
-        }, 7000); // Switch messages every 3 seconds
-      }, 7000); // Wait 5 seconds before starting to alternate messages
+        }, 7000); // Switch messages every 7 seconds
+      }, 7000); // Wait 7 seconds before starting to alternate messages
     }
 
     return () => {
@@ -79,9 +81,16 @@ const LessonCard = ({
   const handleGenerateLesson = async (event: React.MouseEvent) => {
     event.stopPropagation(); // Prevent the card click event
     setIsGenerating(true);
+
     try {
-      const token = await user?.getIdToken();
-      const response = await fetch(
+      if (!user) {
+        console.error('User not authenticated');
+        setIsGenerating(false);
+        return;
+      }
+
+      const token = await user.getIdToken();
+      await fetch(
         `/api/students/${studentId}/lessons/${lessonId}/generate`,
         {
           method: 'POST',
@@ -93,15 +102,36 @@ const LessonCard = ({
         }
       );
 
-      if (response.ok) {
-        // Update the lesson generated status
-        onLessonGenerated(lessonId);
-      } else {
-        console.error('Failed to generate lesson');
-      }
+      // Set up listener to the lesson document in Firestore
+      const lessonDocRef = doc(
+        db,
+        'users',
+        user.uid,
+        'students',
+        studentId,
+        'lessons',
+        lessonId
+      );
+
+      const unsubscribe = onSnapshot(lessonDocRef, (docSnapshot) => {
+        const data = docSnapshot.data();
+        if (data?.status === 'generated') {
+          // Update the lesson generated status
+          onLessonGenerated(lessonId);
+          setIsGenerating(false);
+          // Stop listening
+          unsubscribe();
+        } else if (data?.status === 'error') {
+          console.error('Failed to generate lesson:', data.errorMessage);
+          setIsGenerating(false);
+          // Optionally show error to the user
+          // Stop listening
+          unsubscribe();
+        }
+      });
+
     } catch (error) {
       console.error('Error generating lesson:', error);
-    } finally {
       setIsGenerating(false);
     }
   };
