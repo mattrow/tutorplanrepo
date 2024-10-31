@@ -49,9 +49,8 @@ export async function POST(
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    const generatedTopics = [];
-
-    for (const topic of topics) {
+    // Collect all the promises
+    const promises = topics.map(async (topic: { topicName: any; id: any; }) => {
       // Updated OpenAI prompt with detailed instructions
       const prompt = `You are an expert ${studentLearningLanguage} tutor specializing in teaching students at the ${studentLevel} level. Your student's native language is ${studentNativeLanguage}.
 
@@ -144,9 +143,7 @@ Ensure the JSON is properly formatted, uses double quotes for keys and strings, 
 
       // Remove code fences if present
       if (content.startsWith('```')) {
-        // Remove the first line (``` or ```json)
         content = content.substring(content.indexOf('\n') + 1);
-        // Remove the last line if it contains ```
         const lastLineIndex = content.lastIndexOf('```');
         if (lastLineIndex !== -1) {
           content = content.substring(0, lastLineIndex);
@@ -162,14 +159,8 @@ Ensure the JSON is properly formatted, uses double quotes for keys and strings, 
         content = content.substring(firstBraceIndex, lastBraceIndex + 1).trim();
       } else {
         console.error('JSON content not found in the response.');
-        return NextResponse.json(
-          { error: 'JSON content not found in the response.' },
-          { status: 500 }
-        );
+        throw new Error('JSON content not found in the response.');
       }
-
-      // Log the content for debugging
-      console.log('Extracted JSON content:', content);
 
       // Parse the JSON content
       let parsedContent;
@@ -177,21 +168,21 @@ Ensure the JSON is properly formatted, uses double quotes for keys and strings, 
         parsedContent = JSON.parse(content);
       } catch (e) {
         console.error('Failed to parse OpenAI response as JSON:', e);
-        return NextResponse.json(
-          { error: 'Failed to parse OpenAI response' },
-          { status: 500 }
-        );
+        throw new Error('Failed to parse OpenAI response');
       }
 
-      generatedTopics.push({
+      return {
         id: parsedContent.id || topic.id,
         title: parsedContent.title || topic.topicName,
         introduction: parsedContent.introduction || {},
         inDepth: parsedContent.inDepth || '',
         examples: parsedContent.examples || [],
         exercises: parsedContent.exercises || [],
-      });
-    }
+      };
+    });
+
+    // Wait for all promises to resolve
+    const generatedTopics = await Promise.all(promises);
 
     // Save the generated lesson to Firestore
     const lessonRef = studentRef.collection('lessons').doc(params.lessonId);
