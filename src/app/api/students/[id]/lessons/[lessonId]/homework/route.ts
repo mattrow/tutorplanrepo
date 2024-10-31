@@ -1,10 +1,8 @@
 // src/app/api/students/[id]/lessons/[lessonId]/homework/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, firestore } from '@/firebase/admin';
-import { PDFDocument, rgb } from 'pdf-lib';
-import fontkit from '@pdf-lib/fontkit';
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import OpenAI from 'openai';
-import fetch from 'node-fetch';
 
 export const runtime = 'nodejs';
 
@@ -112,8 +110,9 @@ Provide the exercises in JSON format with the following keys:
   "topicTitle": "${topic.topicName}",
   "exercises": [
     {
-      "type": "Fill-in-the-Blank",
-      "question": "The question with a blank to fill.",
+      "type": "Exercise Type",
+      "question": "The question text.",
+      "options": ["Option 1", "Option 2", "Option 3"], // If applicable
       "answer": "The correct answer."
     },
     // other exercises
@@ -161,21 +160,18 @@ ${topic.topicDescription}
 // Function to create the PDF document
 async function createHomeworkPDF(exercises: any[], lessonTitle: string) {
   const pdfDoc = await PDFDocument.create();
-  pdfDoc.registerFontkit(fontkit);
 
-  // Embed fonts (optional)
-  const fontBytes = await fetch('https://example.com/path-to-your-font.ttf').then(res =>
-    res.arrayBuffer()
-  );
-  const customFont = await pdfDoc.embedFont(fontBytes);
+  // Use a standard font
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
   // Add cover page
   const coverPage = pdfDoc.addPage();
+
   coverPage.drawText(`${lessonTitle} - Homework`, {
     x: 50,
     y: coverPage.getHeight() - 100,
     size: 24,
-    font: customFont,
+    font: font,
     color: rgb(0, 0, 0.8),
   });
 
@@ -188,7 +184,7 @@ async function createHomeworkPDF(exercises: any[], lessonTitle: string) {
       x: 50,
       y: yPosition,
       size: 20,
-      font: customFont,
+      font: font,
       color: rgb(0, 0, 0),
     });
 
@@ -200,7 +196,7 @@ async function createHomeworkPDF(exercises: any[], lessonTitle: string) {
         x: 50,
         y: yPosition,
         size: 12,
-        font: customFont,
+        font: font,
         color: rgb(0, 0, 0),
       });
       yPosition -= 20;
@@ -212,7 +208,7 @@ async function createHomeworkPDF(exercises: any[], lessonTitle: string) {
             x: 70,
             y: yPosition,
             size: 12,
-            font: customFont,
+            font: font,
             color: rgb(0, 0, 0),
           });
           yPosition -= 15;
