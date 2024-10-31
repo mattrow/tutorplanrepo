@@ -18,31 +18,31 @@ export async function GET(
       userId = decodedToken.uid;
     }
 
-    const lessonRef = firestore
-      .collection('users')
-      .doc(userId || 'unknown')
-      .collection('students')
-      .doc(studentId)
-      .collection('lessons')
-      .doc(lessonId);
+    const lessonSnapshot = await firestore
+      .collectionGroup('lessons')
+      .where('id', '==', lessonId)
+      .where('studentId', '==', studentId)
+      .limit(1)
+      .get();
 
-    const lessonDoc = await lessonRef.get();
-
-    if (!lessonDoc.exists) {
+    if (lessonSnapshot.empty) {
       return NextResponse.json({ error: 'Lesson not found' }, { status: 404 });
     }
 
+    const lessonDoc = lessonSnapshot.docs[0];
     const lessonData = lessonDoc.data();
 
-    if (!lessonData) {
-      return NextResponse.json({ error: 'Lesson data not found' }, { status: 404 });
+    const ownerId = lessonData.ownerId;
+
+    if (!ownerId) {
+      return NextResponse.json({ error: 'Owner not found' }, { status: 404 });
     }
 
-    if (lessonData.public !== true && (!userId || userId !== lessonData.ownerId)) {
+    if (lessonData.public !== true && (!userId || userId !== ownerId)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    return NextResponse.json({ lesson: lessonData });
+    return NextResponse.json({ lesson: lessonData }, { status: 200 });
   } catch (error) {
     console.error('Error fetching lesson:', error);
     return NextResponse.json(

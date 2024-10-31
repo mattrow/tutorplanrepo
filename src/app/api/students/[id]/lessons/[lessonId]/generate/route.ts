@@ -189,8 +189,10 @@ Ensure the JSON is properly formatted, uses double quotes for keys and strings, 
 
     await lessonRef.set(
       {
-        generated: true,
+        id: params.lessonId,
+        studentId: studentId,
         ownerId: userId,
+        generated: true,
         generatedTopics,
         public: false,
         createdAt: new Date().toISOString(),
