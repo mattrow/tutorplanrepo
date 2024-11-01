@@ -7,7 +7,7 @@ import { auth } from "@/firebase/config";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { LogOut, CreditCard, User } from "lucide-react";
-import Sidebar from "@/components/ui/Sidebar";
+import ClientLayout from "@/components/ClientLayout";
 
 export default function SettingsPage() {
   const { user, loading } = useAuth();
@@ -63,66 +63,65 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#f8f9fc]">
-      {/* Sidebar */}
-      <Sidebar />
+    <ClientLayout>
+      <div className="min-h-screen flex flex-col bg-[#f8f9fc]">
+        {/* Sidebar */}
+        <div className="flex-1 ml-64"> {/* ml-64 matches Sidebar width */}
+          <div className="p-8">
+            <div className="max-w-2xl mx-auto">
+              <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-8">
+                <h1 className="text-3xl font-bold text-gray-900 mb-6">Settings</h1>
 
-      {/* Main Content */}
-      <div className="flex-1 ml-64"> {/* ml-64 matches Sidebar width */}
-        <div className="p-8">
-          <div className="max-w-2xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-6">Settings</h1>
-
-              {/* User Information */}
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2 mb-4">
-                  <User className="w-5 h-5 text-gray-600" />
-                  Account Information
-                </h2>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-700">Email:</span>
-                    <span className="text-gray-900 font-medium">{user.email}</span>
+                {/* User Information */}
+                <div className="mb-6">
+                  <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2 mb-4">
+                    <User className="w-5 h-5 text-gray-600" />
+                    Account Information
+                  </h2>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-700">Email:</span>
+                      <span className="text-gray-900 font-medium">{user.email}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Billing Information */}
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2 mb-4">
-                  <CreditCard className="w-5 h-5 text-gray-600" />
-                  Billing Information
-                </h2>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-700">Subscription Status:</span>
-                    <span className="text-gray-900 font-medium">{billingStatus}</span>
+                {/* Billing Information */}
+                <div className="mb-6">
+                  <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2 mb-4">
+                    <CreditCard className="w-5 h-5 text-gray-600" />
+                    Billing Information
+                  </h2>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-700">Subscription Status:</span>
+                      <span className="text-gray-900 font-medium">{billingStatus}</span>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <Link href="https://billing.stripe.com/p/login/cN2g16gFF6aZgmc5kk" passHref>
+                      <Button className="w-full bg-[#396afc] text-white hover:bg-[#396afc]/90 font-satoshi-bold rounded-full flex items-center justify-center gap-2">
+                        Manage Subscription
+                      </Button>
+                    </Link>
                   </div>
                 </div>
-                <div className="mt-4">
-                  <Link href="https://billing.stripe.com/p/login/cN2g16gFF6aZgmc5kk" passHref>
-                    <Button className="w-full bg-[#396afc] text-white hover:bg-[#396afc]/90 font-satoshi-bold rounded-full flex items-center justify-center gap-2">
-                      Manage Subscription
-                    </Button>
-                  </Link>
-                </div>
-              </div>
 
-              {/* Sign Out Button */}
-              <div className="mt-8">
-                <Button
-                  onClick={handleSignOut}
-                  className="w-full bg-red-500 text-white hover:bg-red-600 font-satoshi-bold rounded-full flex items-center justify-center gap-2"
-                >
-                  <LogOut className="w-5 h-5" />
-                  Sign Out
-                </Button>
+                {/* Sign Out Button */}
+                <div className="mt-8">
+                  <Button
+                    onClick={handleSignOut}
+                    className="w-full bg-red-500 text-white hover:bg-red-600 font-satoshi-bold rounded-full flex items-center justify-center gap-2"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    Sign Out
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </ClientLayout>
   );
 } 
