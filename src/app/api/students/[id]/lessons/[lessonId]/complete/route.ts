@@ -75,7 +75,7 @@ export async function POST(
     };
 
     if (updatedTopics) {
-      updateData.topics = updatedTopics;
+      updateData.generatedTopics = updatedTopics;
     }
 
     if (confirmLesson) {
@@ -102,19 +102,22 @@ export async function POST(
 
         console.log('Existing lessons:', existingLessons);
 
-        // Iterate over the lessons to update topics
+        // Update topics in the matching lesson within the level
         const updatedLessons = existingLessons.map((lesson: any) => {
-          const updatedLessonTopics = lesson.topics.map((topic: Topic) => {
-            const updatedTopic = updatedTopics.find((ut: Topic) => ut.id === topic.id);
-            if (updatedTopic) {
-              console.log(
-                `Updating topic ${topic.id} status to ${updatedTopic.status}`
-              );
-              return { ...topic, status: updatedTopic.status };
-            }
-            return topic;
-          });
-          return { ...lesson, topics: updatedLessonTopics };
+          if (lesson.id === lessonId) {
+            const updatedLessonTopics = lesson.topics.map((topic: Topic) => {
+              const updatedTopic = updatedTopics.find((ut: Topic) => ut.id === topic.id);
+              if (updatedTopic) {
+                console.log(
+                  `Updating topic ${topic.id} status to ${updatedTopic.status}`
+                );
+                return { ...topic, status: updatedTopic.status };
+              }
+              return topic;
+            });
+            return { ...lesson, topics: updatedLessonTopics };
+          }
+          return lesson;
         });
 
         console.log('Updated lessons to be saved:', updatedLessons);

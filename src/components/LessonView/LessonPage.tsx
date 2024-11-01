@@ -49,17 +49,51 @@ const TopicModule = ({
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
       <div className="flex items-start gap-4">
-        <button
-          onClick={() => onStatusChange({ completed: !status.completed })}
-          className={`mt-1 transition-colors ${
-            status.completed ? 'text-[#396afc]' : 'text-gray-300 hover:text-gray-400'
-          }`}
-        >
-          <CheckCircle className="w-6 h-6" />
-        </button>
-
         <div className="flex-1">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">{topic.title}</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-semibold text-gray-900">{topic.title}</h3>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onStatusChange({ completed: !status.completed })}
+                className={`transition-colors ${
+                  status.completed
+                    ? 'text-green-500'
+                    : 'text-blue-500 hover:text-blue-600'
+                }`}
+              >
+                {status.completed ? (
+                  <CheckCircle className="w-6 h-6" />
+                ) : (
+                  <CheckSquare className="w-6 h-6" />
+                )}
+              </button>
+
+              {status.completed && (
+                <>
+                  <button
+                    onClick={() => onStatusChange({ understood: true })}
+                    className={`p-2 rounded-full transition-colors ${
+                      status.understood === true
+                        ? 'bg-blue-50 text-[#396afc]'
+                        : 'hover:bg-gray-100 text-gray-400'
+                    }`}
+                  >
+                    <ThumbsUp className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => onStatusChange({ understood: false })}
+                    className={`p-2 rounded-full transition-colors ${
+                      status.understood === false
+                        ? 'bg-red-100 text-red-600'
+                        : 'hover:bg-gray-100 text-gray-400'
+                    }`}
+                  >
+                    <ThumbsDown className="w-5 h-5" />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
 
           <TopicNavigation
             activeSection={activeSection}
@@ -81,36 +115,6 @@ const TopicModule = ({
 
           {activeSection === 'exercises' && (
             <ExercisesSection exercises={topic.exercises} />
-          )}
-
-          {status.completed && (
-            <div className="mt-6 flex items-center gap-4 border-t pt-4">
-              <span className="text-sm text-gray-600">
-                Did the student understand this topic?
-              </span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => onStatusChange({ understood: true })}
-                  className={`p-2 rounded-full transition-colors ${
-                    status.understood === true
-                      ? 'bg-blue-50 text-[#396afc]'
-                      : 'hover:bg-gray-100 text-gray-400'
-                  }`}
-                >
-                  <ThumbsUp className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => onStatusChange({ understood: false })}
-                  className={`p-2 rounded-full transition-colors ${
-                    status.understood === false
-                      ? 'bg-red-100 text-red-600'
-                      : 'hover:bg-gray-100 text-gray-400'
-                  }`}
-                >
-                  <ThumbsDown className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
           )}
         </div>
       </div>
@@ -160,45 +164,6 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
 
     fetchLesson();
   }, [user, studentId, lessonId]);
-
-  const handleConfirmLesson = async () => {
-    if (isConfirmed || !user || !lessonData) return;
-
-    setIsConfirming(true);
-    try {
-      const token = await user.getIdToken();
-
-      // Prepare the request body
-      const requestBody = {
-        confirmLesson: true,
-      };
-
-      // Make the API call to the existing route
-      const response = await fetch(
-        `/api/students/${lessonData.studentId}/lessons/${lessonData.id}/complete`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(requestBody),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to confirm lesson');
-      }
-
-      setIsConfirmed(true); // Mark as confirmed
-      toast.success('Lesson Confirmed');
-    } catch (error) {
-      console.error('Error confirming lesson:', error);
-      toast.error('Failed to confirm lesson');
-    } finally {
-      setIsConfirming(false);
-    }
-  };
 
   // Initialize topic statuses based on generatedTopics
   const [topicStatuses, setTopicStatuses] = useState<Record<string, TopicStatus>>(() => {
@@ -370,6 +335,66 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
     }
   };
 
+  // Check if at least one topic is marked as completed
+  const hasCompletedTopics = Object.values(topicStatuses).some(
+    (status) => status.completed
+  );
+
+  const handleConfirmLesson = async () => {
+    if (isConfirmed || !user || !lessonData) return;
+
+    if (!hasCompletedTopics) {
+      toast.error(
+        'Make sure that you check off which topics you covered during the lesson and if the student understood.'
+      );
+      return;
+    }
+
+    setIsConfirming(true);
+    try {
+      const token = await user.getIdToken();
+
+      // Prepare the updated topics array
+      const updatedTopics = lessonData.generatedTopics.map((topic) => {
+        const status = topicStatuses[topic.id];
+        return {
+          ...topic,
+          status: status.completed ? 'completed' : 'not started',
+          understood: status.understood,
+        };
+      });
+
+      const requestBody = {
+        confirmLesson: true,
+        updatedTopics, // Include updated topics in the request body
+      };
+
+      const response = await fetch(
+        `/api/students/${lessonData.studentId}/lessons/${lessonData.id}/complete`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to confirm lesson');
+      }
+
+      setIsConfirmed(true); // Mark as confirmed
+      toast.success('Lesson Confirmed');
+    } catch (error) {
+      console.error('Error confirming lesson:', error);
+      toast.error('Failed to confirm lesson');
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
   return (
     <div className="p-8 bg-[#f8f9fc] min-h-screen">
       {/* Back Button */}
@@ -492,25 +517,14 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
         ))}
       </div>
 
-      {/* Complete Lesson Button
-      {canCompleteLesson && (
-        <div className="fixed bottom-4 right-4">
-          <Button
-            onClick={handleCompleteLesson}
-            className="bg-green-500 text-white hover:bg-green-600 font-bold rounded-full px-6 py-3 flex items-center gap-2"
-          >
-            <CheckSquare className="w-5 h-5" />
-            Complete Lesson
-          </Button>
-        </div>
-      )} */}
-
       <div className="flex justify-end">
         <button
           onClick={handleConfirmLesson}
           disabled={isConfirming || isConfirmed}
           className={`mt-4 px-4 py-2 rounded-md text-white ${
-            isConfirmed ? 'bg-green-500 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
+            isConfirmed
+              ? 'bg-green-500 cursor-not-allowed'
+              : 'bg-blue-500 hover:bg-blue-600'
           }`}
         >
           {isConfirming ? (
