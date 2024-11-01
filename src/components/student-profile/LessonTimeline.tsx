@@ -30,9 +30,13 @@ import { Button } from '@/components/ui/button'; // Ensure you have a Button com
 interface LessonTimelineProps {
   studentId: string;
   studentLevel: string;
+  onLevelChange?: (newLevel: string) => void;
 }
 
-const LessonTimeline = ({ studentId, studentLevel }: LessonTimelineProps) => {
+// Define the levels
+const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+
+const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimelineProps) => {
   const { user } = useAuth();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +45,8 @@ const LessonTimeline = ({ studentId, studentLevel }: LessonTimelineProps) => {
   const [hasChanges, setHasChanges] = useState(false);
   const initialLessonsRef = useRef<Lesson[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isAdvancing, setIsAdvancing] = useState(false);
+  const [currentLevel, setCurrentLevel] = useState(studentLevel);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -95,6 +101,35 @@ const LessonTimeline = ({ studentId, studentLevel }: LessonTimelineProps) => {
       }
     }
   }, [pathname]);
+
+  useEffect(() => {
+    fetchLessons();
+  }, [currentLevel]);
+
+  const fetchLessons = async () => {
+    try {
+      setLoading(true);
+      const token = await user?.getIdToken();
+
+      // Fetch the lesson plan
+      const response = await fetch(`/api/students/${studentId}/lesson-plan`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch lesson plan');
+      }
+
+      const data = await response.json();
+      setLessons(data.lessons);
+    } catch (error) {
+      console.error('Error fetching lessons:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const findContainer = (id: UniqueIdentifier): UniqueIdentifier | null => {
     if (lessons.some((lesson) => lesson.id === id)) {
@@ -312,6 +347,48 @@ const LessonTimeline = ({ studentId, studentLevel }: LessonTimelineProps) => {
     return currentIndex < levels.length - 1 ? levels[currentIndex + 1] : currentLevel;
   };
 
+  const handleAdvanceLevel = async () => {
+    try {
+      if (isAdvancing) return;
+      setIsAdvancing(true);
+      const token = await user?.getIdToken();
+
+      const response = await fetch(`/api/students/${studentId}/advance-level`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to advance to next level');
+      }
+
+      const data = await response.json();
+      console.log(data.message);
+      // Update the current level
+      setCurrentLevel(data.newLevel);
+      // Re-fetch lessons
+      await fetchLessons();
+      // Notify parent component
+      if (onLevelChange) {
+        onLevelChange(data.newLevel);
+      }
+      // Optionally, show success message to the user
+    } catch (error) {
+      console.error('Error advancing to next level:', error);
+      // Optionally, show error message to the user
+    } finally {
+      setIsAdvancing(false);
+    }
+  };
+
+  const hasNextLevel = () => {
+    const currentLevelIndex = LEVELS.indexOf(currentLevel);
+    return currentLevelIndex >= 0 && currentLevelIndex < LEVELS.length - 1;
+  };
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -404,24 +481,16 @@ const LessonTimeline = ({ studentId, studentLevel }: LessonTimelineProps) => {
         </div>
       )}
 
-      {/* "Advance to Next Level" Button */}
-      {studentLevel !== 'C2' && (
-        <div className="mt-6 flex justify-center">
-          <button
-            className="bg-[#396afc] text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors flex items-center gap-2 group"
-            // No onClick functionality yet
-          >
-            <span>Advance to {getNextLevel(studentLevel)}</span>
-            <svg
-              className="w-4 h-4 transform transition-transform group-hover:translate-x-1"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </button>
-        </div>
+      {hasNextLevel() ? (
+        <Button
+          onClick={handleAdvanceLevel}
+          disabled={isAdvancing}
+          className="mt-4"
+        >
+          {isAdvancing ? 'Advancing...' : 'Advance to Next Level'}
+        </Button>
+      ) : (
+        <p className="mt-4">You have completed all levels!</p>
       )}
     </>
   );

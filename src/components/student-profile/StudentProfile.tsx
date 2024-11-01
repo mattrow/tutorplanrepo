@@ -32,56 +32,57 @@ const StudentProfile = ({ studentId, onBack }: StudentProfileProps) => {
   const [progressPercentage, setProgressPercentage] = useState<number>(0);
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchStudentAndLevel = async () => {
-      try {
-        const token = await user?.getIdToken();
+  const fetchStudentAndLevel = async () => {
+    try {
+      setLoading(true);
+      const token = await user?.getIdToken();
 
-        // Fetch student data
-        const response = await fetch(`/api/students/${studentId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch student');
+      // Fetch student data
+      const response = await fetch(`/api/students/${studentId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
+      });
 
-        const data = await response.json();
-        const studentData = {
-          ...data.student,
-          completedLessons: data.student.completedLessons || 0,
-          startDate: data.student.startDate || data.student.createdAt,
-          nativeLanguage: data.student.nativeLanguage || 'Not specified',
-        };
-        setStudent(studentData);
-
-        // Now fetch level data
-        const levelResponse = await fetch(`/api/students/${studentId}/level`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!levelResponse.ok) {
-          throw new Error('Failed to fetch level data');
-        }
-
-        const levelDataJson = await levelResponse.json();
-        setLevelData(levelDataJson.levelData);
-
-        // Calculate the progress
-        if (levelDataJson.levelData) {
-          calculateProgress(levelDataJson.levelData);
-        }
-      } catch (error) {
-        console.error('Error fetching student or level data:', error);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error('Failed to fetch student');
       }
-    };
 
+      const data = await response.json();
+      const studentData = {
+        ...data.student,
+        completedLessons: data.student.completedLessons || 0,
+        startDate: data.student.startDate || data.student.createdAt,
+        nativeLanguage: data.student.nativeLanguage || 'Not specified',
+      };
+      setStudent(studentData);
+
+      // Now fetch level data
+      const levelResponse = await fetch(`/api/students/${studentId}/level`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!levelResponse.ok) {
+        throw new Error('Failed to fetch level data');
+      }
+
+      const levelDataJson = await levelResponse.json();
+      setLevelData(levelDataJson.levelData);
+
+      // Calculate the progress
+      if (levelDataJson.levelData) {
+        calculateProgress(levelDataJson.levelData);
+      }
+    } catch (error) {
+      console.error('Error fetching student or level data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (user && studentId) {
       fetchStudentAndLevel();
     }
@@ -118,6 +119,11 @@ const StudentProfile = ({ studentId, onBack }: StudentProfileProps) => {
 
     const firstLetter = level.charAt(0) as keyof typeof colors;
     return colors[firstLetter] || 'bg-gray-50 text-gray-600 border-gray-200';
+  };
+
+  const handleLevelChange = (newLevel: string) => {
+    // Re-fetch student data when level changes
+    fetchStudentAndLevel();
   };
 
   if (loading) {
@@ -210,7 +216,11 @@ const StudentProfile = ({ studentId, onBack }: StudentProfileProps) => {
       {/* Lesson Timeline */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Learning Timeline</h3>
-        <LessonTimeline studentId={student.id} studentLevel={student.level} />
+        <LessonTimeline 
+          studentId={student.id} 
+          studentLevel={student.level} 
+          onLevelChange={handleLevelChange} 
+        />
       </div>
     </div>
   );
