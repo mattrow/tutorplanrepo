@@ -165,17 +165,23 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
     fetchLesson();
   }, [user, studentId, lessonId]);
 
-  // Initialize topic statuses based on generatedTopics
-  const [topicStatuses, setTopicStatuses] = useState<Record<string, TopicStatus>>(() => {
-    const generatedTopics = lesson.generatedTopics ?? [];
-    return generatedTopics.reduce(
-      (acc, topic) => ({
-        ...acc,
-        [topic.id]: { completed: false, understood: null },
-      }),
-      {}
-    );
-  });
+  // Initialize topic statuses with an empty object
+  const [topicStatuses, setTopicStatuses] = useState<Record<string, TopicStatus>>({});
+
+  // Update topic statuses when lessonData is loaded
+  useEffect(() => {
+    if (lessonData) {
+      const generatedTopics = lessonData.generatedTopics ?? [];
+      const statuses = generatedTopics.reduce(
+        (acc, topic) => ({
+          ...acc,
+          [topic.id]: { completed: false, understood: null },
+        }),
+        {}
+      );
+      setTopicStatuses(statuses);
+    }
+  }, [lessonData]);
 
   const updateTopicStatus = (topicId: string, status: Partial<TopicStatus>) => {
     setTopicStatuses((prev) => ({
@@ -184,9 +190,9 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
     }));
   };
 
-  // Check if all topics are completed and understood status is set
-  const canCompleteLesson = Object.values(topicStatuses).some(
-    (status) => status.completed && status.understood !== null
+  // Check if at least one topic is marked as completed
+  const hasCompletedTopics = Object.values(topicStatuses).some(
+    (status) => status.completed
   );
 
   // Function to handle lesson completion
@@ -335,11 +341,6 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
     }
   };
 
-  // Check if at least one topic is marked as completed
-  const hasCompletedTopics = Object.values(topicStatuses).some(
-    (status) => status.completed
-  );
-
   const handleConfirmLesson = async () => {
     if (isConfirmed || !user || !lessonData) return;
 
@@ -366,7 +367,7 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
 
       const requestBody = {
         confirmLesson: true,
-        updatedTopics, // Include updated topics in the request body
+        updatedTopics,
       };
 
       const response = await fetch(
@@ -507,11 +508,11 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
 
       {/* Topics */}
       <div className="space-y-6">
-        {lesson.generatedTopics && lesson.generatedTopics.map((topic) => (
+        {lessonData?.generatedTopics?.map((topic) => (
           <TopicModule
             key={topic.id}
             topic={topic}
-            status={topicStatuses[topic.id]}
+            status={topicStatuses[topic.id] || { completed: false, understood: null }}
             onStatusChange={(status) => updateTopicStatus(topic.id, status)}
           />
         ))}
@@ -520,7 +521,7 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
       <div className="flex justify-end">
         <button
           onClick={handleConfirmLesson}
-          disabled={isConfirming || isConfirmed}
+          disabled={isConfirming || isConfirmed || !lessonData}
           className={`mt-4 px-4 py-2 rounded-md text-white ${
             isConfirmed
               ? 'bg-green-500 cursor-not-allowed'
