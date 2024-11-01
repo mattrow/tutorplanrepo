@@ -23,7 +23,7 @@ const languageFlags: Record<string, { countryCode: keyof typeof CountryFlags }> 
   French: { countryCode: 'FR' },
   German: { countryCode: 'DE' },
   Italian: { countryCode: 'IT' },
-  Portuguese: { countryCode: 'PT' },
+  Portuguese: { countryCode: 'BR' },
   Japanese: { countryCode: 'JP' },
   Chinese: { countryCode: 'CN' },
   Korean: { countryCode: 'KR' },

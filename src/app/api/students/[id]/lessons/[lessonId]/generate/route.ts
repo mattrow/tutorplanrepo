@@ -1,9 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, firestore } from '@/firebase/admin';
 import OpenAI from 'openai';
+import { zodResponseFormat } from "openai/helpers/zod";
+import { z } from "zod";
 
 export const maxDuration = 120; // 120 seconds (2 minutes)
 export const dynamic = 'force-dynamic';
+
+// Define the schema using Zod
+const LessonSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  introduction: z.object({
+    explanation: z.string(),
+    keyPoints: z.array(z.string())
+  }),
+  inDepth: z.string(),
+  examples: z.array(z.object({
+    context: z.string(),
+    correct: z.string(),
+    incorrect: z.string(),
+    explanation: z.string()
+  })),
+  exercises: z.array(z.object({
+    id: z.string(),
+    question: z.string(),
+    type: z.string(),
+    options: z.array(z.string()),
+    hint: z.string()
+  }))
+});
 
 export async function POST(
   request: NextRequest,
@@ -116,56 +142,32 @@ Ensure the content follows this structure. Do not include the example in the out
 
 Ensure the JSON is properly formatted, uses double quotes for keys and strings, and can be parsed by JSON parsers. Do not include any comments, code fences, extra text, or explanations within or outside the JSON. Only output the JSON object.`;
 
-      // OpenAI API call with updated system message
+      // Update OpenAI API call with structured output format
       const response = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
-            content: `You are an assistant that only replies in JSON format.
+            content: `You are an assistant that only replies in JSON format. Your output must be a single valid JSON object.
 
 **Instructions**:
-- **All explanations must be in English.**
-- **All content (vocabulary words, phrases, grammar points, example sentences, and exercises) must be in ${studentLearningLanguage}.**
-- **The "inDepth" section must be entirely in English except for examples and specific terms in ${studentLearningLanguage}. Do not include full sentences or paragraphs in ${studentLearningLanguage} in this section.**
-- Ensure that the JSON is properly formatted, uses double quotes for keys and strings, and can be parsed by JSON parsers.
-- Do not include any code fences, backticks, or comments outside of the JSON content.
-- The "inDepth" field should be a string containing Markdown-formatted text.
-- Only output the JSON object with no additional text.`,
+- All explanations must be in English.
+- All content must be in ${studentLearningLanguage}.
+- The "inDepth" section must be entirely in English except for examples and specific terms.
+- Only output the JSON object with no additional text or formatting.`,
           },
           { role: 'user', content: prompt },
         ],
         temperature: 0.7,
         max_tokens: 4000,
         top_p: 1,
+        response_format: zodResponseFormat(LessonSchema, "lesson")
       });
 
-      let content = response.choices[0].message?.content?.trim() ?? '';
-
-      // Remove code fences if present
-      if (content.startsWith('```')) {
-        content = content.substring(content.indexOf('\n') + 1);
-        const lastLineIndex = content.lastIndexOf('```');
-        if (lastLineIndex !== -1) {
-          content = content.substring(0, lastLineIndex);
-        }
-        content = content.trim();
-      }
-
-      // Extract JSON content
-      const firstBraceIndex = content.indexOf('{');
-      const lastBraceIndex = content.lastIndexOf('}');
-
-      if (firstBraceIndex !== -1 && lastBraceIndex !== -1) {
-        content = content.substring(firstBraceIndex, lastBraceIndex + 1).trim();
-      } else {
-        console.error('JSON content not found in the response.');
-        throw new Error('JSON content not found in the response.');
-      }
-
-      // Parse the JSON content
+      // Parse the response
       let parsedContent;
       try {
+        const content = response.choices[0].message?.content?.trim() ?? '';
         parsedContent = JSON.parse(content);
       } catch (e) {
         console.error('Failed to parse OpenAI response as JSON:', e);
