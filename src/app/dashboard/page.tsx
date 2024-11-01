@@ -19,8 +19,6 @@ import StudentProfile from '@/components/student-profile/StudentProfile';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import LessonPage from '@/components/LessonView/LessonPage';
 import SuggestionsPage from '@/components/dashboard/SuggestionsPage';
-import { analytics } from '@/firebase/config';
-import { logEvent } from 'firebase/analytics';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string);
 
@@ -122,24 +120,6 @@ export default function DashboardPage() {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (subscriptionStatus === 'active') {
-      if (analytics) {
-        logEvent(analytics, 'purchase', {
-          transaction_id: 'subscription_' + user?.uid,
-          value: 29.99, // Replace with actual price
-          currency: 'USD',
-          items: [
-            {
-              item_id: 'pro_subscription',
-              item_name: 'Pro Subscription',
-            },
-          ],
-        });
-      }
-    }
-  }, [subscriptionStatus]);
 
   const renderContent = () => {
     if (authLoading || isLoading || !dataFetched) {

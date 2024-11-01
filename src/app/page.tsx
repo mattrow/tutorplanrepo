@@ -8,8 +8,6 @@ import CTASection from '@/components/ui/CTASection'
 import Footer from '@/components/ui/Footer'
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
-import { analytics } from '@/firebase/config';
-import { logEvent } from 'firebase/analytics';
 
 export default function ModernLandingPage() {
   const { user, loading } = useAuth();
@@ -18,16 +16,6 @@ export default function ModernLandingPage() {
   useEffect(() => {
     setIsAuthenticated(user !== null);
   }, [user]);
-
-  useEffect(() => {
-    if (analytics) {
-      logEvent(analytics, 'page_view', {
-        page_title: 'Home',
-        page_location: window.location.href,
-        page_path: window.location.pathname,
-      });
-    }
-  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">

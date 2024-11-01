@@ -3,14 +3,14 @@ import Navigation from '@/components/ui/Navigation'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { signInWithEmailAndPassword } from 'firebase/auth'
-import { auth } from '@/firebase/config'
+import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth'
+import { auth, googleProvider } from '@/firebase/config'
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { handleGoogleAuth } from '@/utils/auth/googleSignIn'
+import { Flame, ArrowLeft } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -30,11 +30,29 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     try {
-      await handleGoogleAuth();
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      
+      // Create or update user in your backend
+      const response = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          email: user.email,
+          uid: user.uid,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to register Google user');
+      }
+
       router.push("/dashboard");
     } catch (error) {
       console.error('Error signing in with Google:', error);
-      alert(error instanceof Error ? error.message : 'An error occurred during Google sign-in');
+      // TODO: Add user-friendly error handling
     }
   };
 

@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { email, uid, displayName, photoURL } = await req.json();
+    const { email, uid } = await req.json();
 
     const userDoc = db.collection('users').doc(uid);
     const userSnapshot = await userDoc.get();
@@ -31,21 +31,11 @@ export async function POST(req: NextRequest) {
       // Create new user document if it doesn't exist
       await userDoc.set({
         email,
-        displayName,
-        photoURL,
         role: "user",
         stripeId: null,
         subscriptionId: null,
         subscriptionStatus: null,
-        createdAt: Date.now(),
-      });
-    } else {
-      // Update existing user document
-      await userDoc.update({
-        email,
-        displayName,
-        photoURL,
-        lastLoginAt: Date.now(),
+        createdAt: Date.now()
       });
     }
 
