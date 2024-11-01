@@ -50,6 +50,8 @@ export async function POST(req: Request) {
       subscription_data: trialEligible ? {
         trial_period_days: 7,
       } : undefined,
+      allow_promotion_codes: true,
+      billing_address_collection: 'auto',
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?success=true`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?canceled=true`,
     });
