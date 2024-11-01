@@ -1,8 +1,7 @@
 "use client";
 import { useState } from 'react';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth, db } from '@/firebase/config';
-import { doc, setDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/firebase/config';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
@@ -11,9 +10,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import Navigation from '@/components/ui/Navigation'
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { signInWithPopup } from 'firebase/auth';
-import { googleProvider } from '@/firebase/config';
+import { handleGoogleAuth } from '@/utils/auth/googleSignIn';
+import { analytics } from '@/firebase/config';
+import { logEvent } from 'firebase/analytics';
 
 export default function SignupPage() {
   const [email, setEmail] = useState("")
@@ -41,10 +40,15 @@ export default function SignupPage() {
         throw new Error(errorData.error || 'Failed to register');
       }
 
-      const data = await response.json();
-      console.log('User registered successfully:', data);
-
       await signInWithEmailAndPassword(auth, email, password);
+
+      // Log the sign-up event
+      if (analytics) {
+        logEvent(analytics, 'sign_up', {
+          method: 'Email',
+        });
+      }
+
       router.push("/dashboard")
     } catch (error) {
       console.error('Error signing up', error);
@@ -54,28 +58,19 @@ export default function SignupPage() {
 
   const handleGoogleSignUp = async () => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
-      
-      const response = await fetch('/api/auth/google', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          email: user.email,
-          uid: user.uid,
-        }),
-      });
+      await handleGoogleAuth();
 
-      if (!response.ok) {
-        throw new Error('Failed to register Google user');
+      // Log the sign-up event
+      if (analytics) {
+        logEvent(analytics, 'sign_up', {
+          method: 'Google',
+        });
       }
 
       router.push("/dashboard");
     } catch (error) {
       console.error('Error signing up with Google:', error);
-      alert(error instanceof Error ? error.message : 'An error occurred during registration');
+      alert(error instanceof Error ? error.message : 'An error occurred during Google sign-up');
     }
   };
 
