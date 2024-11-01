@@ -2,37 +2,80 @@ import { useState } from 'react';
 import { UserPlus, Info, ArrowLeft } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/hooks/useAuth';
+import ReactMarkdown from 'react-markdown';
 
 const LANGUAGE_LEVELS = [
   {
     level: 'A1',
     name: 'Beginner',
-    description: 'Can understand and use basic phrases, introduce themselves, and ask simple questions.'
+    description: `
+**At this level**, students can understand and use _very basic expressions_ and phrases aimed at the satisfaction of needs of a concrete type. They can introduce themselves and others, ask and answer questions about personal details such as where they live and people they know. They can interact in a simple way provided the other person talks slowly and clearly.
+
+**Possible questions to test fluency:**
+- Can you introduce yourself and tell me where you're from?
+- What is your favorite color or food?
+- Can you count from one to ten?
+`
   },
   {
     level: 'A2',
     name: 'Elementary',
-    description: 'Can communicate in simple tasks, describe their background, and handle basic social interactions.'
+    description: `
+**Students can understand sentences and frequently used expressions** related to areas of most immediate relevance (e.g., basic personal and family information, shopping, local geography, employment). They can communicate in simple and routine tasks requiring a direct exchange of information on familiar and routine matters.
+
+**Possible questions to test fluency:**
+- Can you describe your daily routine?
+- Tell me about your family or friends.
+- How do you spend your free time?
+`
   },
   {
     level: 'B1',
     name: 'Intermediate',
-    description: 'Can handle most travel situations, express opinions, and discuss familiar topics with reasonable fluency.'
+    description: `
+**Students can understand the main points of clear standard input on familiar matters regularly encountered in work, school, leisure, etc.** They can deal with most situations likely to arise while traveling in an area where the language is spoken. They can produce simple connected text on topics which are familiar or of personal interest.
+
+**Possible questions to test fluency:**
+- What did you do on your last vacation?
+- Can you discuss your favorite book or movie?
+- What are your plans for the future?
+`
   },
   {
     level: 'B2',
     name: 'Upper Intermediate',
-    description: 'Can understand complex texts, interact fluently with native speakers, and produce detailed content.'
+    description: `
+**Students can understand the main ideas of complex text on both concrete and abstract topics, including technical discussions in their field of specialization.** They can interact with a degree of fluency and spontaneity that makes regular interaction with native speakers quite possible without strain for either party.
+
+**Possible questions to test fluency:**
+- Can you compare and contrast two different cultures?
+- Discuss the advantages and disadvantages of modern technology.
+- What issues do you think are important in today's society?
+`
   },
   {
     level: 'C1',
     name: 'Advanced',
-    description: 'Can understand demanding texts, express ideas fluently, and use language flexibly for social and professional purposes.'
+    description: `
+**Students can understand a wide range of demanding, longer texts, and recognize implicit meaning.** They can express ideas fluently and spontaneously without much obvious searching for expressions. They can use language flexibly and effectively for social, academic, and professional purposes.
+
+**Possible questions to test fluency:**
+- Analyze the impact of globalization on local economies.
+- Discuss ethical dilemmas in modern science.
+- How does literature reflect societal changes?
+`
   },
   {
     level: 'C2',
     name: 'Mastery',
-    description: 'Can understand virtually everything heard or read, summarize information, and express themselves very fluently.'
+    description: `
+**Students can understand with ease virtually everything heard or read.** They can summarize information from different spoken and written sources, reconstructing arguments and accounts in a coherent presentation. They can express themselves spontaneously, very fluently, and precisely, differentiating finer shades of meaning even in more complex situations.
+
+**Possible questions to test fluency:**
+- Critically evaluate a philosophical argument or theory.
+- Discuss the implications of recent political events on global relations.
+- How do you perceive the relationship between art and human psychology?
+`
   }
 ];
 
@@ -203,11 +246,13 @@ export default function AddStudentForm({ onBack }: { onBack: () => void }) {
               <Info className="w-5 h-5 text-[#396afc]" />
               <h3 className="font-semibold text-gray-900">Level Description</h3>
             </div>
-            <p className="text-gray-600">
-              {selectedLevel
-                ? LANGUAGE_LEVELS.find(l => l.level === selectedLevel)?.description
-                : 'Select a level to see its description'}
-            </p>
+            {selectedLevel ? (
+              <ReactMarkdown className="prose text-gray-600">
+                {LANGUAGE_LEVELS.find(l => l.level === selectedLevel)?.description || ''}
+              </ReactMarkdown>
+            ) : (
+              <p className="text-gray-600">Select a level to see its description</p>
+            )}
           </div>
 
           <Button

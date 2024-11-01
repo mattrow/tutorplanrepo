@@ -65,3 +65,12 @@
   opacity: 0;
   transition: opacity 500ms ease-in-out;
 }
+
+@supports not (font-family: "Segoe UI Emoji") {
+  .emoji-fallback {
+    display: none;
+  }
+  .emoji-fallback-icon {
+    display: inline-block !important;
+  }
+}

@@ -1,9 +1,11 @@
+import React from 'react';
 import { useEffect, useState } from 'react';
 import { ChevronRight, Plus } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import * as CountryFlags from 'country-flag-icons/react/3x2';
 
 interface Student {
   id: string;
@@ -15,17 +17,17 @@ interface Student {
   createdAt: string;
 }
 
-const languageFlags: Record<string, string> = {
-  English: '🇬🇧',
-  Spanish: '🇪🇸',
-  French: '🇫🇷',
-  German: '🇩🇪',
-  Italian: '🇮🇹',
-  Portuguese: '🇵🇹',
-  Japanese: '🇯🇵',
-  Chinese: '🇨🇳',
-  Korean: '🇰🇷',
-  Russian: '🇷🇺',
+const languageFlags: Record<string, { countryCode: keyof typeof CountryFlags }> = {
+  English: { countryCode: 'GB' },
+  Spanish: { countryCode: 'ES' },
+  French: { countryCode: 'FR' },
+  German: { countryCode: 'DE' },
+  Italian: { countryCode: 'IT' },
+  Portuguese: { countryCode: 'PT' },
+  Japanese: { countryCode: 'JP' },
+  Chinese: { countryCode: 'CN' },
+  Korean: { countryCode: 'KR' },
+  Russian: { countryCode: 'RU' },
 };
 
 const getLevelColor = (level: string) => {
@@ -116,8 +118,11 @@ export default function DashboardHome({ onAddStudent }: { onAddStudent: () => vo
 
               <div className="flex items-center space-x-6">
                 <div className="flex items-center space-x-3">
-                  <span className="text-2xl" role="img" aria-label={`${student.language} flag`}>
-                    {languageFlags[student.language]}
+                  <span role="img" aria-label={`${student.language} flag`}>
+                    {(() => {
+                      const FlagComponent = CountryFlags[languageFlags[student.language].countryCode];
+                      return <FlagComponent className="w-6 h-6" />;
+                    })()}
                   </span>
                   <div className={`px-3 py-1 rounded-lg ${getLevelColor(student.level)} font-medium`}>
                     {student.level}

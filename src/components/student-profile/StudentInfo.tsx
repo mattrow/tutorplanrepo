@@ -1,5 +1,6 @@
 import React from 'react';
 import { Globe, Book } from 'lucide-react';
+import * as CountryFlags from 'country-flag-icons/react/3x2';
 
 interface StudentInfoProps {
   student: {
@@ -11,17 +12,17 @@ interface StudentInfoProps {
   };
 }
 
-const languageFlags: Record<string, string> = {
-  English: '🇬🇧',
-  Spanish: '🇪🇸',
-  French: '🇫🇷',
-  German: '🇩🇪',
-  Italian: '🇮🇹',
-  Portuguese: '🇵🇹',
-  Japanese: '🇯🇵',
-  Chinese: '🇨🇳',
-  Korean: '🇰🇷',
-  Russian: '🇷🇺',
+const languageFlags: Record<string, { countryCode: keyof typeof CountryFlags }> = {
+  English: { countryCode: 'GB' },
+  Spanish: { countryCode: 'ES' },
+  French: { countryCode: 'FR' },
+  German: { countryCode: 'DE' },
+  Italian: { countryCode: 'IT' },
+  Portuguese: { countryCode: 'PT' },
+  Japanese: { countryCode: 'JP' },
+  Chinese: { countryCode: 'CN' },
+  Korean: { countryCode: 'KR' },
+  Russian: { countryCode: 'RU' },
 };
 
 const getLevelColor = (level: string) => {
@@ -54,8 +55,11 @@ const StudentInfo = ({ student }: StudentInfoProps) => {
             <span>Learning {student.language}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xl" role="img" aria-label={`${student.language} flag`}>
-              {languageFlags[student.language]}
+            <span role="img" aria-label={`${student.language} flag`}>
+              {(() => {
+                const FlagComponent = CountryFlags[languageFlags[student.language].countryCode];
+                return <FlagComponent className="w-6 h-6" />;
+              })()}
             </span>
             <div className={`px-3 py-1 rounded-lg ${getLevelColor(student.level)} font-medium`}>
               {student.level}
