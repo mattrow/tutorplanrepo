@@ -18,6 +18,7 @@ import StudentProfile from '@/components/student-profile/StudentProfile';
 // import LessonView from '@/components/LessonView/LessonView';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import LessonPage from '@/components/LessonView/LessonPage';
+import SuggestionsPage from '@/components/dashboard/SuggestionsPage';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string);
 
@@ -149,24 +150,17 @@ export default function DashboardPage() {
       );
     }
 
-    // // Check for lesson route
-    // const lessonMatch = pathname.match(/^\/dashboard\/student\/([^/]+)\/lesson\/([^/]+)$/);
-    // if (lessonMatch) {
-    //   const studentId = lessonMatch[1];
-    //   const lessonId = lessonMatch[2];
-    //   return (
-    //     <div className="flex">
-    //       <Sidebar />
-    //       <div className="ml-64 w-full">
-    //         <LessonPage
-    //           studentId={studentId}
-    //           lessonId={lessonId}
-    //           onClose={() => router.push('/dashboard')}
-    //         />
-    //       </div>
-    //     </div>
-    //   );
-    // }
+    // Check if on suggestions page
+    if (pathname === '/dashboard/suggestions') {
+      return (
+        <div className="flex">
+          <Sidebar />
+          <div className="ml-64 w-full">
+            <SuggestionsPage />
+          </div>
+        </div>
+      );
+    }
 
     // Check for student route
     const studentMatch = pathname.match(/^\/dashboard\/student\/([^/]+)$/);

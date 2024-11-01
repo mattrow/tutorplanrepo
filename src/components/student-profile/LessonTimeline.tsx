@@ -27,7 +27,12 @@ import LoadingSpinner from '../ui/LoadingSpinner';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button'; // Ensure you have a Button component
 
-const LessonTimeline = ({ studentId }: { studentId: string }) => {
+interface LessonTimelineProps {
+  studentId: string;
+  studentLevel: string;
+}
+
+const LessonTimeline = ({ studentId, studentLevel }: LessonTimelineProps) => {
   const { user } = useAuth();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
@@ -300,6 +305,13 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
     );
   };
 
+  // Function to get the next level
+  const getNextLevel = (currentLevel: string): string => {
+    const levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+    const currentIndex = levels.indexOf(currentLevel);
+    return currentIndex < levels.length - 1 ? levels[currentIndex + 1] : currentLevel;
+  };
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -389,6 +401,26 @@ const LessonTimeline = ({ studentId }: { studentId: string }) => {
               'Save Changes'
             )}
           </Button>
+        </div>
+      )}
+
+      {/* "Advance to Next Level" Button */}
+      {studentLevel !== 'C2' && (
+        <div className="mt-6 flex justify-center">
+          <button
+            className="bg-[#396afc] text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors flex items-center gap-2 group"
+            // No onClick functionality yet
+          >
+            <span>Advance to {getNextLevel(studentLevel)}</span>
+            <svg
+              className="w-4 h-4 transform transition-transform group-hover:translate-x-1"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </button>
         </div>
       )}
     </>
