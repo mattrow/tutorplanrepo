@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 
@@ -13,7 +12,6 @@ if (!getApps().length) {
   });
 }
 
-const auth = getAuth();
 const db = getFirestore();
 
 export const dynamic = 'force-dynamic';
@@ -24,24 +22,27 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { email, password } = await req.json();
+    const { email, uid } = await req.json();
 
-    const userRecord = await auth.createUser({
-      email,
-      password,
-    });
+    const userDoc = db.collection('users').doc(uid);
+    const userSnapshot = await userDoc.get();
 
-    const userDoc = db.collection('users').doc(userRecord.uid);
-    await userDoc.set({
-      email: email,
-      role: "user",
-      stripeId: null,
-      subscriptionId: null,
-      subscriptionStatus: null,
-      createdAt: Date.now()
-    });
+    if (!userSnapshot.exists) {
+      // Create new user document
+      await userDoc.set({
+        email,
+        role: "user",
+        stripeId: null,
+        subscriptionId: null,
+        subscriptionStatus: null,
+        createdAt: Date.now(),
+      });
+    } else {
+      // User already exists (this shouldn't happen on registration)
+      return NextResponse.json({ error: 'User already exists' }, { status: 400 });
+    }
 
-    return NextResponse.json({ success: true, uid: userRecord.uid });
+    return NextResponse.json({ success: true, uid });
   } catch (error) {
     console.error('Error registering user:', error);
     return NextResponse.json(
