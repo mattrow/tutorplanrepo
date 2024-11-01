@@ -73,4 +73,5 @@ export interface Topic {
     updatedAt?: string;
     subject: string;
     level: string;
+    confirmed?: boolean;
   }

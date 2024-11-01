@@ -12,7 +12,7 @@ import {
   Download,
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import IntroductionSection from './TopicSections/IntroductionSection';
 import InDepthSection from './TopicSections/InDepthSection';
 import ExamplesSection from './TopicSections/ExamplesSection';
@@ -21,6 +21,7 @@ import TopicNavigation from './TopicSections/TopicNavigation';
 import { GeneratedTopic, Topic } from '@/types/lesson';
 import { Lesson } from '@/types/lesson';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'react-toastify'; // Import the toast notification library
 
 interface TopicStatus {
   completed: boolean;
@@ -119,7 +120,85 @@ const TopicModule = ({
 
 const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) => {
   const router = useRouter();
-  // const { getToken } = useAuth();
+
+  // Use useParams to get route parameters
+  const params = useParams();
+  const studentId = params.id;
+  const lessonId = params.lessonId;
+
+  const [lessonData, setLessonData] = useState<Lesson | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [isConfirmed, setIsConfirmed] = useState(false);
+
+  useEffect(() => {
+    const fetchLesson = async () => {
+      if (!user || !studentId || !lessonId) return;
+
+      try {
+        const token = await user.getIdToken();
+        const response = await fetch(`/api/students/${studentId}/lessons/${lessonId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setLessonData(data.lesson);
+
+          // Set confirmation status
+          setIsConfirmed(data.lesson.confirmed || false);
+        } else {
+          console.error('Failed to fetch lesson');
+        }
+      } catch (error) {
+        console.error('Error fetching lesson:', error);
+      }
+    };
+
+    fetchLesson();
+  }, [user, studentId, lessonId]);
+
+  const handleConfirmLesson = async () => {
+    if (isConfirmed || !user || !lessonData) return;
+
+    setIsConfirming(true);
+    try {
+      const token = await user.getIdToken();
+
+      // Prepare the request body
+      const requestBody = {
+        confirmLesson: true,
+      };
+
+      // Make the API call to the existing route
+      const response = await fetch(
+        `/api/students/${lessonData.studentId}/lessons/${lessonData.id}/complete`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to confirm lesson');
+      }
+
+      setIsConfirmed(true); // Mark as confirmed
+      toast.success('Lesson Confirmed');
+    } catch (error) {
+      console.error('Error confirming lesson:', error);
+      toast.error('Failed to confirm lesson');
+    } finally {
+      setIsConfirming(false);
+    }
+  };
 
   // Initialize topic statuses based on generatedTopics
   const [topicStatuses, setTopicStatuses] = useState<Record<string, TopicStatus>>(() => {
@@ -413,7 +492,7 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
         ))}
       </div>
 
-      {/* Complete Lesson Button */}
+      {/* Complete Lesson Button
       {canCompleteLesson && (
         <div className="fixed bottom-4 right-4">
           <Button
@@ -424,7 +503,47 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
             Complete Lesson
           </Button>
         </div>
-      )}
+      )} */}
+
+      <div className="flex justify-end">
+        <button
+          onClick={handleConfirmLesson}
+          disabled={isConfirming || isConfirmed}
+          className={`mt-4 px-4 py-2 rounded-md text-white ${
+            isConfirmed ? 'bg-green-500 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
+          }`}
+        >
+          {isConfirming ? (
+            <div className="flex items-center">
+              <svg
+                className="animate-spin h-5 w-5 mr-2 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8H4z"
+                ></path>
+              </svg>
+              Confirming...
+            </div>
+          ) : isConfirmed ? (
+            'Lesson Confirmed'
+          ) : (
+            'Confirm Lesson'
+          )}
+        </button>
+      </div>
     </div>
   );
 };

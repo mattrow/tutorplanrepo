@@ -5,6 +5,8 @@ import { UniqueIdentifier } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Bars3Icon, TrashIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
+import { CheckCircle, SquareCheckBig } from 'lucide-react'; // Import the CheckCircle icon
 import { Topic } from '@/types/lesson';
 
 interface TopicItemProps {
@@ -34,8 +36,6 @@ const TopicItem = ({ topic, lessonId, onDeleteTopic }: TopicItemProps) => {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.7 : 1,
-    // Optionally, you can handle cursor styling via Tailwind CSS classes
-    // cursor: 'grab',
   };
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -55,22 +55,31 @@ const TopicItem = ({ topic, lessonId, onDeleteTopic }: TopicItemProps) => {
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes} // Move attributes here
-      {...listeners}  // Move listeners here
+      {...attributes}
+      {...listeners}
       className={`flex items-center justify-between gap-2 p-4 rounded-lg border border-gray-200 shadow-sm bg-blue-10 ${
         isDragging ? 'z-50' : ''
       } cursor-grab active:cursor-grabbing`}
     >
-      <div className="flex items-center gap-2">
-        {/* Drag handle icon - No listeners here */}
+      <div className="flex items-start gap-2">
+        {/* Drag handle icon */}
         <div>
           <Bars3Icon className="w-5 h-5 text-gray-400" />
         </div>
         <div>
-          <span className="font-medium text-gray-800">{topic.topicName}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-gray-800">
+              {topic.topicName}
+            </span>
+            {/* Conditionally render the green tick */}
+            {topic.status === 'completed' && (
+              <CheckCircleIcon className="w-6 h-6 text-green-500" />
+            )}
+          </div>
           <p className="text-sm text-gray-600">{topic.topicDescription}</p>
         </div>
       </div>
+      
 
       <div className="flex items-center gap-2">
         {/* Topic Type Badge */}

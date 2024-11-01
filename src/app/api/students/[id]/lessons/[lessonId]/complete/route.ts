@@ -63,60 +63,74 @@ export async function POST(
 
     const lessonData = lessonDoc.data() as Lesson;
 
-    // Get the updated topics from the request body
-    const { updatedTopics } = await request.json();
+    // Get the updated topics and confirmation status from the request body
+    const { updatedTopics, confirmLesson } = await request.json();
 
     console.log('Received updated topics:', updatedTopics);
+    console.log('Confirm Lesson:', confirmLesson);
 
-    // Update the topics in the lesson document
-    await lessonRef.update({
-      topics: updatedTopics,
+    // Update the topics and confirmation status in the lesson document
+    const updateData: Partial<Lesson> = {
       updatedAt: new Date().toISOString(),
-    });
-    console.log('Updated lesson topics in Firestore');
+    };
 
-    // Update the topics in the student's level document
-    const levelRef = studentRef
-      .collection('subject')
-      .doc(subject)
-      .collection('levels')
-      .doc(level);
+    if (updatedTopics) {
+      updateData.topics = updatedTopics;
+    }
 
-    const levelDoc = await levelRef.get();
-    console.log('Level document exists:', levelDoc.exists);
+    if (confirmLesson) {
+      updateData.confirmed = true;
+    }
 
-    if (levelDoc.exists) {
-      const levelData = levelDoc.data();
-      const existingLessons = levelData?.lessons || [];
+    await lessonRef.update(updateData);
+    console.log('Updated lesson in Firestore with:', updateData);
 
-      console.log('Existing lessons:', existingLessons);
+    // Proceed to update the topics in the student's level document only if topics are provided
+    if (updatedTopics) {
+      const levelRef = studentRef
+        .collection('subject')
+        .doc(subject)
+        .collection('levels')
+        .doc(level);
 
-      // Iterate over the lessons to update topics
-      const updatedLessons = existingLessons.map((lesson: any) => {
-        const updatedLessonTopics = lesson.topics.map((topic: Topic) => {
-          const updatedTopic = updatedTopics.find((ut: Topic) => ut.id === topic.id);
-          if (updatedTopic) {
-            console.log(`Updating topic ${topic.id} status to ${updatedTopic.status}`);
-            return { ...topic, status: updatedTopic.status };
-          }
-          return topic;
+      const levelDoc = await levelRef.get();
+      console.log('Level document exists:', levelDoc.exists);
+
+      if (levelDoc.exists) {
+        const levelData = levelDoc.data();
+        const existingLessons = levelData?.lessons || [];
+
+        console.log('Existing lessons:', existingLessons);
+
+        // Iterate over the lessons to update topics
+        const updatedLessons = existingLessons.map((lesson: any) => {
+          const updatedLessonTopics = lesson.topics.map((topic: Topic) => {
+            const updatedTopic = updatedTopics.find((ut: Topic) => ut.id === topic.id);
+            if (updatedTopic) {
+              console.log(
+                `Updating topic ${topic.id} status to ${updatedTopic.status}`
+              );
+              return { ...topic, status: updatedTopic.status };
+            }
+            return topic;
+          });
+          return { ...lesson, topics: updatedLessonTopics };
         });
-        return { ...lesson, topics: updatedLessonTopics };
-      });
 
-      console.log('Updated lessons to be saved:', updatedLessons);
+        console.log('Updated lessons to be saved:', updatedLessons);
 
-      try {
-        await levelRef.update({
-          lessons: updatedLessons,
-          updatedAt: new Date().toISOString(),
-        });
-        console.log('Updated level lessons in Firestore');
-      } catch (error) {
-        console.error('Error updating level lessons:', error);
+        try {
+          await levelRef.update({
+            lessons: updatedLessons,
+            updatedAt: new Date().toISOString(),
+          });
+          console.log('Updated level lessons in Firestore');
+        } catch (error) {
+          console.error('Error updating level lessons:', error);
+        }
+      } else {
+        console.error('Level document not found for level:', level);
       }
-    } else {
-      console.error('Level document not found for level:', level);
     }
 
     return NextResponse.json({ success: true });
