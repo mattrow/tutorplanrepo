@@ -348,6 +348,11 @@ const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimeli
   };
 
   const handleAdvanceLevel = async () => {
+    const confirmAdvance = window.confirm(
+      'Are you sure? This action will erase all the data of your current level.'
+    );
+    if (!confirmAdvance) return;
+
     try {
       if (isAdvancing) return;
       setIsAdvancing(true);
@@ -394,7 +399,7 @@ const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimeli
   }
 
   return (
-    <>
+    <div className="flex flex-col">
       <DndContext
         sensors={sensors}
         collisionDetection={pointerWithin}
@@ -482,17 +487,19 @@ const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimeli
       )}
 
       {hasNextLevel() ? (
-        <Button
-          onClick={handleAdvanceLevel}
-          disabled={isAdvancing}
-          className="mt-4"
-        >
-          {isAdvancing ? 'Advancing...' : 'Advance to Next Level'}
-        </Button>
+        <div className="mt-8 flex justify-center">
+          <Button
+            onClick={handleAdvanceLevel}
+            disabled={isAdvancing}
+            className="mt-4 bg-[#396afc] text-white hover:bg-[#396afc]/90 font-satoshi-bold rounded-full flex items-center justify-center gap-2 py-6 disabled:opacity-50"
+          >
+            {isAdvancing ? 'Advancing...' : 'Advance to Next Level'}
+          </Button>
+        </div>
       ) : (
-        <p className="mt-4">You have completed all levels!</p>
+        <p className="mt-4 text-center">You have completed all levels!</p>
       )}
-    </>
+    </div>
   );
 };
 
