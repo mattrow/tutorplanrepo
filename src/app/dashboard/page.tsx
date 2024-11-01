@@ -140,12 +140,17 @@ export default function DashboardPage() {
 
     if (subscriptionStatus !== 'active' && role !== 'Pro User') {
       return (
-        <div className="w-full max-w-6xl">
-          <Pricing 
-            userId={user?.uid || ''}
-            userEmail={user?.email || ''}
-            onSubscribe={handleUpgrade}
-          />
+        <div className="min-h-screen bg-gradient-to-br from-[#396afc] to-[#2948ff]">
+          <Navigation isAuthenticated={true} />
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="w-full">
+              <Pricing 
+                userId={user?.uid || ''}
+                userEmail={user?.email || ''}
+                onSubscribe={handleUpgrade}
+              />
+            </div>
+          </div>
         </div>
       );
     }
