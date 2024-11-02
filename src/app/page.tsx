@@ -29,6 +29,28 @@ export default function ModernLandingPage() {
     }
   }, []);
 
+  // Add scroll animation observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('animate-visible');
+          }
+        });
+      },
+      {
+        threshold: 0.1,
+      }
+    );
+
+    document.querySelectorAll('[data-animate]').forEach((element) => {
+      observer.observe(element);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Hero Section */}
@@ -41,10 +63,18 @@ export default function ModernLandingPage() {
 
       {/* Main Content */}
       <main className="flex-grow w-full">
-        <VideoDemo />
-        <Features />
-        <HowItWorks />
-        <CTASection />
+        <div data-animate>
+          <VideoDemo />
+        </div>
+        <div data-animate>
+          <Features />
+        </div>
+        <div data-animate>
+          <HowItWorks />
+        </div>
+        <div data-animate>
+          <CTASection />
+        </div>
       </main>
 
       {/* Footer */}
