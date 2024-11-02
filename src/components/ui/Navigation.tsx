@@ -22,7 +22,7 @@ export default function Navigation({ showBackButton = false, isAuthenticated = f
         {/* Middle: Navigation Items (Centered) */}
         <div className="absolute left-1/2 transform -translate-x-1/2">
           <nav className="hidden md:flex items-center space-x-2">
-            {['Blog', 'About', 'FAQ'].map((item) => (
+            {['About', 'FAQ'].map((item) => (
               <Link 
                 key={item} 
                 href={`/${item.toLowerCase()}`}
