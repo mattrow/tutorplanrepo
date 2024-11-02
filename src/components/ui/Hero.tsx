@@ -1,8 +1,19 @@
 import { Button } from "@/components/ui/button"
 import Link from 'next/link'
 import { Sparkles, Clock, Brain, LineChart } from 'lucide-react'
+import { useCallback } from 'react'
+import confetti from 'canvas-confetti'
 
 export default function Hero() {
+  // Function to launch confetti
+  const launchConfetti = useCallback(() => {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+    })
+  }, [])
+
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-[#396afc] to-[#2948ff]">
       {/* Background Elements */}
@@ -63,7 +74,8 @@ export default function Hero() {
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-6 animate-fade-in-up delay-600">
           <Link href="/signup">
-            <Button 
+            <Button
+              onClick={launchConfetti}
               className="w-full sm:w-auto bg-white text-[#396afc] hover:bg-white/90 
                          font-satoshi-black rounded-full px-8 py-6 text-xl h-auto
                          hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
