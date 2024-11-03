@@ -56,6 +56,8 @@ const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimeli
     useSensor(PointerSensor)
   );
 
+  const [isGeneratingGlobal, setIsGeneratingGlobal] = useState(false);
+
   const fetchLessonPlan = async () => {
     try {
       setLoading(true);
@@ -426,6 +428,8 @@ const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimeli
                 onDeleteTopic={handleDeleteTopic}
                 studentId={studentId}
                 onLessonGenerated={handleLessonGenerated}
+                isGeneratingGlobal={isGeneratingGlobal}
+                setIsGeneratingGlobal={setIsGeneratingGlobal}
               />
             </SortableContext>
           ))}

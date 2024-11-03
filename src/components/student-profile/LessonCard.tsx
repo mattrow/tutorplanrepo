@@ -9,6 +9,7 @@ import { PlusIcon } from '@heroicons/react/24/outline';
 import { Sparkles, BookOpen, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { CSSTransition, SwitchTransition } from 'react-transition-group';
+import { toast } from 'react-toastify';
 
 interface LessonCardProps {
   lesson: Lesson;
@@ -17,6 +18,8 @@ interface LessonCardProps {
   onDeleteTopic: (lessonId: string, topicId: string) => void;
   studentId: string;
   onLessonGenerated: (lessonId: string) => void;
+  isGeneratingGlobal: boolean;
+  setIsGeneratingGlobal: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const LessonCard = ({
@@ -26,6 +29,8 @@ const LessonCard = ({
   onDeleteTopic,
   studentId,
   onLessonGenerated,
+  isGeneratingGlobal,
+  setIsGeneratingGlobal,
 }: LessonCardProps) => {
   const router = useRouter();
   const lessonId = lesson.id;
@@ -49,7 +54,15 @@ const LessonCard = ({
 
   const handleGenerateLesson = async (event: React.MouseEvent) => {
     event.stopPropagation();
+
+    // Check if another lesson is being generated
+    if (isGeneratingGlobal) {
+      toast.error('Please wait for the previous lesson to finish generating.');
+      return;
+    }
+
     setIsGenerating(true);
+    setIsGeneratingGlobal(true);
     try {
       const token = await user?.getIdToken();
       const response = await fetch(
@@ -79,6 +92,7 @@ const LessonCard = ({
       console.error('Error generating lesson:', error);
     } finally {
       setIsGenerating(false);
+      setIsGeneratingGlobal(false);
     }
   };
 
@@ -199,7 +213,10 @@ const LessonCard = ({
     return (
       <Button
         onClick={handleGenerateLesson}
-        className="bg-[#396afc] hover:bg-[#2948ff] text-white w-52 h-12 transform hover:scale-105 transition-all duration-300 shadow-md hover:shadow-lg group"
+        disabled={isGeneratingGlobal}
+        className={`bg-[#396afc] hover:bg-[#2948ff] text-white w-52 h-12 transform ${
+          isGeneratingGlobal ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
+        } transition-all duration-300 shadow-md hover:shadow-lg group`}
       >
         <div className="flex items-center justify-center gap-2">
           <Sparkles className="w-5 h-5 group-hover:animate-pulse" />
