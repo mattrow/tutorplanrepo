@@ -27,20 +27,24 @@ export default function SignupPage() {
       return
     }
     try {
+      // Create user in Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      const uid = user.uid;
+
+      // Send uid and email to backend to create user document
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ uid, email }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to register');
       }
-
-      await signInWithEmailAndPassword(auth, email, password);
 
       // Log the sign-up event
       if (analytics) {
