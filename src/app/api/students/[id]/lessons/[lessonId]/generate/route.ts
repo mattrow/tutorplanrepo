@@ -190,6 +190,11 @@ Ensure the JSON is properly formatted, uses double quotes for keys and strings, 
     // Save the generated lesson to Firestore
     const lessonRef = studentRef.collection('lessons').doc(lessonId);
 
+    // Fetch existing lessons to determine the next lesson number
+    const lessonsSnapshot = await studentRef.collection('lessons').get();
+    const lessonCount = lessonsSnapshot.size;
+    const lessonNumber = lessonCount + 1; // Assuming you want to increment the lesson number
+
     await lessonRef.set(
       {
         id: lessonId,
@@ -202,7 +207,8 @@ Ensure the JSON is properly formatted, uses double quotes for keys and strings, 
         topics, // Include the original topics with IDs
         public: false,
         createdAt: new Date().toISOString(),
-        title: `Lesson ${lessonId}`,
+        title: `Lesson ${lessonNumber}`,
+        number: lessonNumber, // Set the lesson number here
       },
       { merge: true }
     );

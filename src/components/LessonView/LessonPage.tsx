@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   CheckCircle,
   ThumbsUp,
@@ -18,10 +18,10 @@ import InDepthSection from './TopicSections/InDepthSection';
 import ExamplesSection from './TopicSections/ExamplesSection';
 import ExercisesSection from './TopicSections/ExercisesSection';
 import TopicNavigation from './TopicSections/TopicNavigation';
-import { GeneratedTopic, Topic } from '@/types/lesson';
-import { Lesson } from '@/types/lesson';
+import { GeneratedTopic, Topic, Lesson } from '@/types/lesson';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'react-toastify'; // Import the toast notification library
+import { toast } from 'react-toastify';
+import confetti from 'canvas-confetti';
 
 interface TopicStatus {
   completed: boolean;
@@ -125,7 +125,6 @@ const TopicModule = ({
 const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) => {
   const router = useRouter();
 
-  // Use useParams to get route parameters
   const params = useParams();
   const studentId = params.id;
   const lessonId = params.lessonId;
@@ -341,6 +340,16 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
     }
   };
 
+  // Function to launch confetti
+  const launchConfetti = useCallback(() => {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+    });
+  }, []);
+
+  // Function to handle lesson confirmation
   const handleConfirmLesson = async () => {
     if (isConfirmed || !user || !lessonData) return;
 
@@ -387,6 +396,7 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
       }
 
       setIsConfirmed(true); // Mark as confirmed
+      launchConfetti();     // Trigger confetti effect
       toast.success('Lesson Confirmed');
     } catch (error) {
       console.error('Error confirming lesson:', error);
@@ -395,6 +405,11 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
       setIsConfirming(false);
     }
   };
+
+  // Construct the lesson title
+  const lessonNumber = lessonData?.number || 'N/A'; // Handle undefined numbers
+  const topicTitles = lessonData?.topics.map((topic: Topic) => topic.topicName).join(', ');
+  const lessonTitle = `Lesson ${lessonNumber}: ${topicTitles}`;
 
   return (
     <div className="p-8 bg-[#f8f9fc] min-h-screen">
@@ -416,7 +431,7 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
           <div>
             <div className="flex items-center gap-4 mb-2">
               <BookOpen className="w-6 h-6 text-[#396afc]" />
-              <h1 className="text-2xl font-bold text-gray-900">{lesson.title}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{lessonTitle}</h1>
             </div>
             <p className="text-gray-600 ml-10">
               Track progress and understanding as you cover each topic.

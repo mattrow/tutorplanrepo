@@ -170,3 +170,16 @@
 .highlight-word:hover::after {
   @apply scale-x-100 origin-bottom-left;
 }
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite linear;
+}

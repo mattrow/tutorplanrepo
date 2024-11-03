@@ -6,9 +6,9 @@ import { useDroppable } from '@dnd-kit/core';
 import TopicItem from './TopicItem';
 import { Button } from '@/components/ui/button';
 import { PlusIcon } from '@heroicons/react/24/outline';
-import { Sparkles, BookOpen, RefreshCw } from 'lucide-react';
+import { Sparkles, BookOpen, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { CSSTransition, SwitchTransition } from 'react-transition-group'
+import { CSSTransition, SwitchTransition } from 'react-transition-group';
 
 interface LessonCardProps {
   lesson: Lesson;
@@ -29,55 +29,26 @@ const LessonCard = ({
 }: LessonCardProps) => {
   const router = useRouter();
   const lessonId = lesson.id;
-
   const { user } = useAuth();
-
   const [showForm, setShowForm] = useState(false);
   const [newTopicName, setNewTopicName] = useState('');
   const [newTopicDescription, setNewTopicDescription] = useState('');
-  const [newTopicType, setNewTopicType] = useState<
-    'communication' | 'vocabulary' | 'grammar' | ''
-  >('');
-
+  const [newTopicType, setNewTopicType] = useState<'communication' | 'vocabulary' | 'grammar' | ''>('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const successTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // New state variables for message switching
-  const messages = ["It's a big file...",'Generating...',];
-  const [messageIndex, setMessageIndex] = useState(0);
-  const [showAlternateMessage, setShowAlternateMessage] = useState(false);
-
-  const nodeRef = useRef(null);
-
+  // Clean up timeout on unmount
   useEffect(() => {
-    let initialTimer: NodeJS.Timeout;
-    let messageTimer: NodeJS.Timeout;
-    if (isGenerating) {
-      initialTimer = setTimeout(() => {
-        setShowAlternateMessage(true);
-        // Start toggling messages every few seconds
-        messageTimer = setInterval(() => {
-          setMessageIndex((prevIndex) => (prevIndex + 1) % messages.length);
-        }, 7000); // Switch messages every 3 seconds
-      }, 7000); // Wait 5 seconds before starting to alternate messages
-    }
-
     return () => {
-      // Cleanup timers when isGenerating changes or component unmounts
-      clearTimeout(initialTimer);
-      clearInterval(messageTimer);
-      setShowAlternateMessage(false);
-      setMessageIndex(0);
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current);
+      }
     };
-  }, [isGenerating]);
-
-  const handleClick = () => {
-    if (isClickable) {
-      router.push(`/dashboard/student/${studentId}/lesson/${lessonId}`);
-    }
-  };
+  }, []);
 
   const handleGenerateLesson = async (event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent the card click event
+    event.stopPropagation();
     setIsGenerating(true);
     try {
       const token = await user?.getIdToken();
@@ -94,8 +65,13 @@ const LessonCard = ({
       );
 
       if (response.ok) {
-        // Update the lesson generated status
         onLessonGenerated(lessonId);
+        // Show success state
+        setShowSuccess(true);
+        // Reset after 2 seconds
+        successTimeoutRef.current = setTimeout(() => {
+          setShowSuccess(false);
+        }, 2000);
       } else {
         console.error('Failed to generate lesson');
       }
@@ -119,30 +95,122 @@ const LessonCard = ({
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     const newTopic = {
       id: `user-topic-${Date.now()}`,
       topicName: newTopicName,
       topicDescription: newTopicDescription,
       order: lesson.topics.length + 1,
       status: 'not started',
-      type: newTopicType, // Include the selected topic type
+      type: newTopicType,
       isUserAdded: true,
     };
 
     onAddTopic(lessonId, newTopic);
-
-    // Reset form fields
     setNewTopicName('');
     setNewTopicDescription('');
     setNewTopicType('');
     setShowForm(false);
   };
 
+  const renderActionButton = () => {
+    if (isGenerating) {
+      return (
+        <Button
+          disabled
+          className="bg-gray-100 text-gray-500 w-52 h-12 relative overflow-hidden group"
+        >
+          <div className="absolute inset-0">
+            <div className="absolute inset-0 bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 animate-shimmer" 
+                 style={{ 
+                   backgroundSize: '200% 100%',
+                   animation: 'shimmer 2s infinite linear'
+                 }}
+            />
+            <div className="absolute inset-0 bg-white/20 animate-pulse" />
+          </div>
+          <div className="relative flex items-center justify-center gap-3">
+            <svg
+              className="animate-spin h-5 w-5 text-gray-500"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            <span className="animate-pulse">Generating...</span>
+          </div>
+        </Button>
+      );
+    }
+
+    if (showSuccess) {
+      return (
+        <Button
+          className="bg-green-500 hover:bg-green-600 text-white w-52 h-12 transform transition-all duration-300"
+        >
+          <div className="flex items-center justify-center gap-2">
+            <CheckCircle2 className="w-5 h-5 animate-bounce" />
+            <span>Generated!</span>
+          </div>
+        </Button>
+      );
+    }
+
+    if (lesson.generated) {
+      return (
+        <div className="flex flex-col gap-2 w-52">
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/dashboard/student/${studentId}/lesson/${lessonId}`);
+            }}
+            className="bg-[#396afc] hover:bg-[#2948ff] text-white w-full h-12 transform hover:scale-105 transition-all duration-300 shadow-md hover:shadow-lg"
+          >
+            <div className="flex items-center justify-center gap-2">
+              <BookOpen className="w-5 h-5" />
+              <span>View Lesson</span>
+            </div>
+          </Button>
+          <Button
+            onClick={handleGenerateLesson}
+            className="bg-white border-2 border-[#396afc] text-[#396afc] hover:bg-[#396afc] hover:text-white w-full h-12 transform hover:scale-105 transition-all duration-300 shadow-md hover:shadow-lg"
+          >
+            <div className="flex items-center justify-center gap-2">
+              <RefreshCw className="w-5 h-5" />
+              <span>Regenerate</span>
+            </div>
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <Button
+        onClick={handleGenerateLesson}
+        className="bg-[#396afc] hover:bg-[#2948ff] text-white w-52 h-12 transform hover:scale-105 transition-all duration-300 shadow-md hover:shadow-lg group"
+      >
+        <div className="flex items-center justify-center gap-2">
+          <Sparkles className="w-5 h-5 group-hover:animate-pulse" />
+          <span>Generate Lesson</span>
+        </div>
+      </Button>
+    );
+  };
+
   return (
-    <div
-      className={`bg-white rounded-lg p-4 shadow-sm border border-gray-200 flex`}
-    >
+    <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 flex">
       {/* Left Side: Topics */}
       <div className="flex-1">
         <h2 className="text-xl font-semibold">{lesson.title}</h2>
@@ -163,10 +231,7 @@ const LessonCard = ({
             ))}
 
             {showForm ? (
-              <div
-                className="p-2 border border-gray-200 rounded-lg"
-                onClick={(e) => e.stopPropagation()}
-              >
+              <div className="p-2 border border-gray-200 rounded-lg" onClick={(e) => e.stopPropagation()}>
                 <form onSubmit={handleFormSubmit} className="space-y-2">
                   <input
                     type="text"
@@ -179,43 +244,24 @@ const LessonCard = ({
                   <textarea
                     placeholder="Topic Description"
                     value={newTopicDescription}
-                    onChange={(e) =>
-                      setNewTopicDescription(e.target.value)
-                    }
+                    onChange={(e) => setNewTopicDescription(e.target.value)}
                     className="w-full p-2 border border-gray-300 rounded"
                     required
                   />
-
-                  {/* New Topic Type Select Dropdown */}
                   <select
                     value={newTopicType}
-                    onChange={(e) =>
-                      setNewTopicType(
-                        e.target.value as
-                          | 'communication'
-                          | 'vocabulary'
-                          | 'grammar'
-                      )
-                    }
+                    onChange={(e) => setNewTopicType(e.target.value as 'communication' | 'vocabulary' | 'grammar')}
                     className="w-full p-2 border border-gray-300 rounded"
                     required
                   >
-                    <option value="" disabled>
-                      Select Topic Type
-                    </option>
+                    <option value="">Select Topic Type</option>
                     <option value="communication">Communication</option>
                     <option value="vocabulary">Vocabulary</option>
                     <option value="grammar">Grammar</option>
                   </select>
-
                   <div className="flex gap-2">
                     <Button type="submit">Add</Button>
-                    <Button
-                      type="button"
-                      onClick={() => setShowForm(false)}
-                    >
-                      Cancel
-                    </Button>
+                    <Button type="button" onClick={() => setShowForm(false)}>Cancel</Button>
                   </div>
                 </form>
               </div>
@@ -237,78 +283,7 @@ const LessonCard = ({
 
       {/* Right Side: Action Buttons */}
       <div className="flex flex-col items-center justify-center ml-4">
-        {isGenerating ? (
-          <Button
-            disabled
-            className="bg-gray-300 text-gray-500 flex items-center w-52"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <SwitchTransition mode="out-in">
-              <CSSTransition
-                nodeRef={nodeRef}
-                key={showAlternateMessage ? messageIndex : -1}
-                timeout={500}
-                classNames="fade"
-              >
-                <span ref={nodeRef}>
-                  {showAlternateMessage
-                    ? messages[messageIndex]
-                    : 'Generating...'}
-                </span>
-              </CSSTransition>
-            </SwitchTransition>
-            <svg
-              className="w-4 h-4 ml-2 animate-spin"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v8H4z"
-              ></path>
-            </svg>
-          </Button>
-        ) : lesson.generated ? (
-          <div className="space-y-2">
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                router.push(
-                  `/dashboard/student/${studentId}/lesson/${lessonId}`
-                );
-              }}
-              className="bg-green-500 text-white hover:bg-green-600 flex items-center w-52"
-            >
-              <BookOpen className="w-4 h-4 mr-2" />
-              View Lesson
-            </Button>
-            <Button
-              onClick={handleGenerateLesson}
-              className="bg-red-500 text-white hover:bg-red-600 flex items-center w-52"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Regenerate Lesson
-            </Button>
-          </div>
-        ) : (
-          <Button
-            onClick={handleGenerateLesson}
-            className="bg-blue-500 text-white hover:bg-blue-600 flex items-center w-52"
-          >
-            <Sparkles className="w-4 h-4 mr-2" />
-            Generate Lesson
-          </Button>
-        )}
+        {renderActionButton()}
       </div>
     </div>
   );
