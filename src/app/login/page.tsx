@@ -43,29 +43,29 @@ export default function LoginPage() {
       <div className="relative min-h-screen">
         <Navigation showBackButton={true} />
         <main className="flex items-center justify-center px-4 pt-32 pb-16">
-          <Card className="w-full max-w-md bg-white border-none shadow-lg">
+          <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20 shadow-lg">
             <form onSubmit={handleLogin}>
               <CardHeader className="space-y-1">
-                <CardTitle className="text-2xl font-satoshi-black text-gray-900 text-center">Log in to your account</CardTitle>
-                <CardDescription className="text-center text-gray-500 font-satoshi-medium">
+                <CardTitle className="text-2xl font-satoshi-black text-white text-center">Log in to your account</CardTitle>
+                <CardDescription className="text-center text-white/80 font-satoshi-medium">
                   Enter your email and password to access your account
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-gray-700">Email</Label>
+                  <Label htmlFor="email" className="text-white/90">Email</Label>
                   <Input 
                     onChange={(e) => setEmail(e.target.value)} 
                     id="email" 
                     type="email" 
                     placeholder="john@example.com" 
-                    className="bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white focus:ring-white"
                   />
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="text-gray-700">Password</Label>
-                    <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">
+                    <Label htmlFor="password" className="text-white/90">Password</Label>
+                    <Link href="/forgot-password" className="text-sm text-white hover:underline">
                       Forgot password?
                     </Link>
                   </div>
@@ -73,35 +73,35 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)} 
                     id="password" 
                     type="password" 
-                    className="bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white focus:ring-white"
                   />
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="remember" />
+                  <Checkbox id="remember" className="border-white/20 data-[state=checked]:bg-white data-[state=checked]:text-[#396afc]" />
                   <label
                     htmlFor="remember"
-                    className="text-sm font-medium text-gray-700 leading-none"
+                    className="text-sm font-medium text-white/90 leading-none"
                   >
                     Remember me
                   </label>
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col space-y-4">
-                <Button type="submit" className="w-full bg-blue-600 text-white hover:bg-blue-700 font-satoshi-bold rounded-full">
+                <Button type="submit" className="w-full bg-white text-[#396afc] hover:bg-white/90 font-satoshi-bold rounded-full">
                   Log In
                 </Button>
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-gray-200" />
+                    <span className="w-full border-t border-white/20" />
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="bg-white px-2 text-gray-500">Or continue with</span>
+                    <span className="bg-transparent px-2 text-white/60">Or continue with</span>
                   </div>
                 </div>
                 <Button
                   type="button"
                   onClick={handleGoogleSignIn}
-                  className="w-full bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 rounded-full"
+                  className="w-full bg-white text-gray-700 hover:bg-white/90 rounded-full"
                 >
                   <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                     <path
@@ -123,9 +123,9 @@ export default function LoginPage() {
                   </svg>
                   Sign in with Google
                 </Button>
-                <p className="text-sm text-center text-gray-600">
+                <p className="text-sm text-center text-white/80">
                   Don't have an account?{" "}
-                  <Link href="/signup" className="text-blue-600 hover:underline">
+                  <Link href="/signup" className="text-white hover:underline">
                     Sign up
                   </Link>
                 </p>

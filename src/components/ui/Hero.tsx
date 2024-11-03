@@ -15,7 +15,7 @@ export default function Hero() {
   }, [])
 
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-[#396afc] to-[#2948ff]">
+    <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-[#4d7fff] to-[#2948ff]">
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Gradient orbs */}
@@ -76,7 +76,7 @@ export default function Hero() {
           <Link href="/signup">
             <Button
               onClick={launchConfetti}
-              className="w-full sm:w-auto bg-white text-[#396afc] hover:bg-white/90 
+              className="w-full sm:w-auto bg-white text-[#4d7fff] hover:bg-white/90 
                          font-satoshi-black rounded-full px-8 py-6 text-xl h-auto
                          hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
             >

@@ -22,12 +22,12 @@ export default function Navigation({ showBackButton = false, isAuthenticated = f
         {/* Middle: Navigation Items (Centered) */}
         <div className="absolute left-1/2 transform -translate-x-1/2">
           <nav className="hidden md:flex items-center space-x-2">
-            {['About', 'FAQ'].map((item) => (
+            {['Blog', 'About', 'FAQ'].map((item) => (
               <Link 
                 key={item} 
                 href={`/${item.toLowerCase()}`}
                 className="font-satoshi-medium px-4 py-2 text-white rounded-lg 
-                  transition-colors duration-200 hover:bg-blue-500/20"
+                  transition-colors duration-200 hover:bg-white/10"
               >
                 {item}
               </Link>
@@ -41,7 +41,7 @@ export default function Navigation({ showBackButton = false, isAuthenticated = f
             {isAuthenticated ? (
               <Link href="/dashboard">
                 <Button 
-                  className="bg-white text-blue-800 hover:bg-white/90 font-satoshi-bold rounded-full px-6"
+                  className="bg-white text-[#396afc] hover:bg-white/90 font-satoshi-bold rounded-full px-6"
                 >
                   Dashboard
                 </Button>
@@ -50,14 +50,14 @@ export default function Navigation({ showBackButton = false, isAuthenticated = f
               <>
                 <Link href="/login">
                   <Button 
-                    className="bg-blue-800 text-white hover:bg-blue-700 font-satoshi-bold rounded-full px-6"
+                    className="bg-transparent text-white border border-white/20 hover:bg-white/10 font-satoshi-bold rounded-full px-6"
                   >
                     Log in
                   </Button>
                 </Link>
                 <Link href="/signup">
                   <Button 
-                    className="bg-white text-blue-800 hover:bg-white/90 hover:scale-105 font-satoshi-boldtransition-all duration-200 rounded-full px-6"
+                    className="bg-white text-[#396afc] hover:bg-white/90 hover:scale-105 font-satoshi-bold transition-all duration-200 rounded-full px-6"
                   >
                     Sign up
                   </Button>
