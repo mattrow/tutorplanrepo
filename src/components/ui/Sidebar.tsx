@@ -65,7 +65,7 @@ export default function Sidebar() {
               <span className="font-satoshi-medium">Suggest Feature</span>
             </div>
           </Link>
-          <Link href="/contact">
+          {/* <Link href="/contact">
             <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors">
               <MessageSquare className="w-5 h-5" />
               <span className="font-satoshi-medium">Contact</span>
@@ -76,7 +76,7 @@ export default function Sidebar() {
               <Star className="w-5 h-5" />
               <span className="font-satoshi-medium">Rate Us</span>
             </div>
-          </Link>
+          </Link> */}
           <Link href="/settings">
             <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors">
               <Settings className="w-5 h-5" />
