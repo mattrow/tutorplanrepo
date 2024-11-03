@@ -59,7 +59,7 @@ export default function FAQ() {
             <span className="font-satoshi-medium">Common Questions</span>
           </div>
           <h2 className="text-4xl md:text-5xl font-satoshi-black text-white mb-6">
-            Everything You Need to Know
+            Got questions?
           </h2>
           <p className="text-xl text-white/80 max-w-2xl mx-auto">
             Get answers to the most common questions about TutorPlan
