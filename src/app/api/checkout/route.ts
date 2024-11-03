@@ -48,7 +48,7 @@ export async function POST(req: Request) {
       },
       mode: 'subscription',
       subscription_data: trialEligible ? {
-        trial_period_days: 7,
+        trial_period_days: 1,
       } : undefined,
       allow_promotion_codes: true,
       billing_address_collection: 'auto',
