@@ -9,14 +9,16 @@ export default function VideoDemo() {
             
             {/* Video container */}
             <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-              <video 
-                className="w-full aspect-video object-cover"
-                controls
-                poster="/video-placeholder.jpg" // Optional: Add a placeholder image
-              >
-                <source src="https://storage.googleapis.com/web-dev-assets/video-and-source-tags/chrome.mp4" type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
+              {/* Aspect ratio box */}
+              <div className="w-full relative" style={{ paddingTop: '56.25%' }}>
+                <iframe
+                  src="https://player.vimeo.com/video/1025936639?h=79dc34e71d&title=0&byline=0&portrait=0&autoplay=0&muted=0"
+                  frameBorder="0"
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowFullScreen
+                  className="absolute top-0 left-0 w-full h-full"
+                ></iframe>
+              </div>
             </div>
           </div>
         </div>

@@ -20,7 +20,7 @@ export default function HowItWorks() {
           <div className="relative">
             <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl">
               <img 
-                src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80"
+                src="/VideoCall.avif"
                 alt="TutorPlan dashboard demonstration"
                 className="w-full h-full object-cover"
               />
@@ -46,7 +46,7 @@ export default function HowItWorks() {
               </div>
               <div>
                 <h3 className="text-xl font-bold mb-2 text-gray-900">Add Your Student</h3>
-                <p className="text-gray-600 mb-2">Enter your student's current level, goals, and learning preferences.</p>
+                <p className="text-gray-600 mb-2">Enter your student's current level and language.</p>
                 <div className="flex items-center text-[#396afc] font-medium">
                   <span>Automatic CEFR level assessment</span>
                   <ArrowRight className="w-4 h-4 ml-1" />

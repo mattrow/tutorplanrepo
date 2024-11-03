@@ -22,7 +22,7 @@ export default function Features() {
                 <Brain className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold mb-4 text-gray-900">AI-Powered Planning</h3>
-              <p className="text-gray-600">Generate comprehensive, CEFR-aligned lesson plans tailored to each student's level and goals.</p>
+              <p className="text-gray-600">Generate comprehensive, CEFR-aligned lessons tailored to each student's level and goals.</p>
             </div>
           </div>
 
@@ -42,7 +42,7 @@ export default function Features() {
                 <FileText className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold mb-4 text-gray-900">Automated Homework</h3>
-              <p className="text-gray-600">Generate personalized homework assignments that reinforce lesson concepts and track completion.</p>
+              <p className="text-gray-600">Generate personalized homework assignments that reinforce lesson concepts.</p>
             </div>
           </div>
 
@@ -72,7 +72,7 @@ export default function Features() {
                 <Sparkles className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold mb-4 text-gray-900">Full Customization</h3>
-              <p className="text-gray-600">Customize any generated content to match your teaching style and student needs perfectly.</p>
+              <p className="text-gray-600">Edit your students learning plan in any way you want, moving or adding your own topics.</p>
             </div>
           </div>
         </div>

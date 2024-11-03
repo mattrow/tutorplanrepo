@@ -6,6 +6,8 @@ import Features from '@/components/ui/Features'
 import HowItWorks from '@/components/ui/HowItWorks'
 import CTASection from '@/components/ui/CTASection'
 import Footer from '@/components/ui/Footer'
+import FAQ from '@/components/ui/FAQ'
+import TrustedBy from '@/components/ui/TrustedBy'
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import { analytics } from '@/firebase/config';
@@ -58,6 +60,7 @@ export default function ModernLandingPage() {
         <div className="relative z-10">
           <Navigation isAuthenticated={isAuthenticated ?? false} />
           <Hero />
+          <TrustedBy />
         </div>
       </div>
 
@@ -68,6 +71,9 @@ export default function ModernLandingPage() {
         </div>
         <div data-animate>
           <Features />
+        </div>
+        <div data-animate>
+          <FAQ />
         </div>
         <div data-animate>
           <HowItWorks />
