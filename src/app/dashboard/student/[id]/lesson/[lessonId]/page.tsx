@@ -50,32 +50,32 @@ export default function LessonViewPage() {
 
   const handleShareLesson = async () => {
     if (!user) {
-      // Handle unauthenticated case if necessary
       return;
     }
 
     setSharing(true);
     try {
       const token = await user.getIdToken();
-      const response = await fetch(`/api/students/${studentId}/lessons/${lessonId}`, {
-        method: 'PATCH',
+      const response = await fetch(`/api/students/${studentId}/lessons/${lessonId}/share`, {
+        method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ public: true }),
       });
 
       if (response.ok) {
-        // Update lessonData to reflect the lesson is now public
-        setLessonData((prevData: any) => ({ ...prevData, public: true }));
+        const data = await response.json();
+        const { slug } = data;
+
+        // Update lessonData to reflect it has been shared
+        setLessonData((prevData: any) => ({ ...prevData, public: true, sharedSlug: slug }));
 
         // Copy the lesson URL to clipboard
-        const lessonUrl = `${window.location.origin}/dashboard/student/${studentId}/lesson/${lessonId}`;
+        const lessonUrl = `${window.location.origin}/${slug}`;
         await navigator.clipboard.writeText(lessonUrl);
         alert('Lesson link copied to clipboard!');
       } else {
-        console.error('Failed to make lesson public');
+        console.error('Failed to share lesson');
       }
     } catch (error) {
       console.error('Error sharing lesson:', error);

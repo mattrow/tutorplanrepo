@@ -79,8 +79,14 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Include sharedSlug if the lesson is public
+    const lessonResponseData = {
+      ...lessonData,
+      sharedSlug: lessonData.public ? lessonData.sharedSlug : undefined,
+    };
+
     console.log('Lesson access granted, sending lesson data.');
-    return NextResponse.json({ lesson: lessonData }, { status: 200 });
+    return NextResponse.json({ lesson: lessonResponseData }, { status: 200 });
   } catch (error) {
     console.error('Error fetching lesson:', error);
 

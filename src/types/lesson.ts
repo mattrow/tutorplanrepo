@@ -74,4 +74,5 @@ export interface Topic {
     subject: string;
     level: string;
     confirmed?: boolean;
+    sharedSlug?: string;
   }

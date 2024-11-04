@@ -1,7 +1,16 @@
 import { NextResponse } from 'next/server';
+import { firestore } from '@/firebase/admin';
 
 export const GET = async () => {
   const baseUrl = 'https://tutorplan.co';
+
+  // Fetch all public lesson slugs
+  const lessonsSnapshot = await firestore.collection('publicLessons').get();
+  const lessonUrls = lessonsSnapshot.docs.map((doc) => ({
+    loc: `${baseUrl}/${doc.id}`,
+    changefreq: 'monthly',
+    priority: '0.8',
+  }));
 
   const urls = [
     {
@@ -10,6 +19,7 @@ export const GET = async () => {
       priority: '1.0',
     },
     // Include other public URLs as needed
+    ...lessonUrls,
   ];
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   CheckCircle,
@@ -31,8 +33,9 @@ interface TopicStatus {
 interface LessonPageProps {
   lesson: Lesson;
   user: any;
-  onShareLesson: () => void;
-  sharing: boolean;
+  onShareLesson?: () => void;
+  sharing?: boolean;
+  shared?: boolean;
 }
 
 const TopicModule = ({
@@ -227,7 +230,11 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
 
   // Function to copy lesson URL
   const copyLessonUrl = () => {
-    const lessonUrl = window.location.href;
+    const lessonUrl =
+      lesson.public && lesson.sharedSlug
+        ? `${window.location.origin}/${lesson.sharedSlug}`
+        : window.location.href;
+
     navigator.clipboard.writeText(lessonUrl);
     alert('Lesson link copied to clipboard!');
   };

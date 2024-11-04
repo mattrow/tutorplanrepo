@@ -88,6 +88,7 @@ export async function POST(req: NextRequest) {
           .collection('students')
           .add({
             ...studentData,
+            subject: studentData.language,
             completedLessons: 0,
             startDate: startDate,
             createdAt: new Date().toISOString(),
