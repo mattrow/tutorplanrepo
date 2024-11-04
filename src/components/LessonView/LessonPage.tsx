@@ -134,19 +134,22 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
   const [isConfirmed, setIsConfirmed] = useState(false);
 
   useEffect(() => {
+    const fetchLessonData = async () => {
+      const authHeaders: Record<string, string> = {};
+
+      if (user) {
+        authHeaders['Authorization'] = `Bearer ${await user.getIdToken()}`;
+        authHeaders['Content-Type'] = 'application/json';
+      }
+
+      return fetch(`/api/students/${studentId}/lessons/${lessonId}`, {
+        headers: authHeaders,
+      });
+    };
+
     const fetchLesson = async () => {
-      if (!user || !studentId || !lessonId) return;
-
       try {
-        const token = await user.getIdToken();
-        const response = await fetch(`/api/students/${studentId}/lessons/${lessonId}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
+        const response = await fetchLessonData();
         if (response.ok) {
           const data = await response.json();
           setLessonData(data.lesson);
@@ -161,8 +164,9 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
       }
     };
 
+    // Fetch the lesson data on component mount
     fetchLesson();
-  }, [user, studentId, lessonId]);
+  }, [studentId, lessonId]); // Removed 'user' from the dependency array
 
   // Initialize topic statuses with an empty object
   const [topicStatuses, setTopicStatuses] = useState<Record<string, TopicStatus>>({});
