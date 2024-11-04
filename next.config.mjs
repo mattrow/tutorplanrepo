@@ -5,6 +5,29 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     formats: ['image/webp'],
   },
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'www.tutorplan.co',
+          },
+          {
+            type: 'host',
+            value: 'https://www.tutorplan.co',
+          },
+          {
+            type: 'host',
+            value: 'tutorplan.co',
+          },
+        ],
+        destination: 'https://tutorplan.co/:path*',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
