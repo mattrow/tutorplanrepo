@@ -13,7 +13,7 @@ interface StudentInfoProps {
 }
 
 const languageFlags: Record<string, { countryCode: keyof typeof CountryFlags }> = {
-  English: { countryCode: 'GB' },
+  English: { countryCode: 'US' },
   Spanish: { countryCode: 'ES' },
   French: { countryCode: 'FR' },
   German: { countryCode: 'DE' },
