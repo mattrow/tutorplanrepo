@@ -48,77 +48,77 @@ const TopicModule = ({
   onStatusChange: (status: Partial<TopicStatus>) => void;
 }) => {
   const [activeSection, setActiveSection] = useState('introduction');
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-      <div className="flex items-start gap-4">
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold text-gray-900">{topic.title}</h3>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => onStatusChange({ completed: !status.completed })}
-                className={`transition-colors ${
-                  status.completed
-                    ? 'text-green-500'
-                    : 'text-blue-500 hover:text-blue-600'
-                }`}
-              >
-                {status.completed ? (
-                  <CheckCircle className="w-6 h-6" />
-                ) : (
-                  <CheckSquare className="w-6 h-6" />
-                )}
-              </button>
+    <div className={`transform transition-all duration-500 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-8 hover:shadow-md transition-shadow">
+        <div className="flex items-start gap-6">
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-gray-900 bg-gradient-to-r from-[#396afc] to-[#2948ff] bg-clip-text text-transparent">
+                {topic.title}
+              </h3>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onStatusChange({ completed: !status.completed })}
+                  className={`transition-colors ${
+                    status.completed
+                      ? 'text-green-500'
+                      : 'text-blue-500 hover:text-blue-600'
+                  }`}
+                >
+                  {status.completed ? (
+                    <CheckCircle className="w-6 h-6" />
+                  ) : (
+                    <CheckSquare className="w-6 h-6" />
+                  )}
+                </button>
 
-              {status.completed && (
-                <>
-                  <button
-                    onClick={() => onStatusChange({ understood: true })}
-                    className={`p-2 rounded-full transition-colors ${
-                      status.understood === true
-                        ? 'bg-blue-50 text-[#396afc]'
-                        : 'hover:bg-gray-100 text-gray-400'
-                    }`}
-                  >
-                    <ThumbsUp className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => onStatusChange({ understood: false })}
-                    className={`p-2 rounded-full transition-colors ${
-                      status.understood === false
-                        ? 'bg-red-100 text-red-600'
-                        : 'hover:bg-gray-100 text-gray-400'
-                    }`}
-                  >
-                    <ThumbsDown className="w-5 h-5" />
-                  </button>
-                </>
-              )}
+                {status.completed && (
+                  <>
+                    <button
+                      onClick={() => onStatusChange({ understood: true })}
+                      className={`p-2 rounded-full transition-colors ${
+                        status.understood === true
+                          ? 'bg-blue-50 text-[#396afc]'
+                          : 'hover:bg-gray-100 text-gray-400'
+                      }`}
+                    >
+                      <ThumbsUp className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => onStatusChange({ understood: false })}
+                      className={`p-2 rounded-full transition-colors ${
+                        status.understood === false
+                          ? 'bg-red-100 text-red-600'
+                          : 'hover:bg-gray-100 text-gray-400'
+                      }`}
+                    >
+                      <ThumbsDown className="w-5 h-5" />
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <TopicNavigation
+              activeSection={activeSection}
+              onSectionChange={setActiveSection}
+              topic={topic}
+            />
+
+            <div className="mt-8">
+              {activeSection === 'introduction' && <IntroductionSection topic={topic} />}
+              {activeSection === 'in-depth' && <InDepthSection content={topic.inDepth} />}
+              {activeSection === 'examples' && <ExamplesSection examples={topic.examples} />}
+              {activeSection === 'exercises' && <ExercisesSection exercises={topic.exercises} />}
             </div>
           </div>
-
-          <TopicNavigation
-            activeSection={activeSection}
-            onSectionChange={setActiveSection}
-            topic={topic}
-          />
-
-          {activeSection === 'introduction' && (
-            <IntroductionSection topic={topic} />
-          )}
-
-          {activeSection === 'in-depth' && (
-            <InDepthSection content={topic.inDepth} />
-          )}
-
-          {activeSection === 'examples' && (
-            <ExamplesSection examples={topic.examples} />
-          )}
-
-          {activeSection === 'exercises' && (
-            <ExercisesSection exercises={topic.exercises} />
-          )}
         </div>
       </div>
     </div>

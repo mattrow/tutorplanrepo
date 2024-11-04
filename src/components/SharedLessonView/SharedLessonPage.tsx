@@ -6,7 +6,7 @@ import InDepthSection from './TopicSections/InDepthSection';
 import ExamplesSection from './TopicSections/ExamplesSection';
 import ExercisesSection from './TopicSections/ExercisesSection';
 import TopicNavigation from './TopicSections/TopicNavigation';
-import Navigation from '../ui/Navigation';
+import PublicNavigation from '../ui/PublicNavigation';
 import Footer from '../ui/Footer';
 import { GeneratedTopic, Lesson } from '@/types/lesson';
 import * as CountryFlags from 'country-flag-icons/react/3x2';
@@ -64,7 +64,7 @@ const TopicModule = ({ topic }: { topic: GeneratedTopic }) => {
 const SharedLessonPage = ({ lesson }: { lesson: Lesson }) => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navigation />
+      <PublicNavigation />
 
       <main className="flex-grow pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
