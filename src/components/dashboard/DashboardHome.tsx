@@ -42,11 +42,21 @@ export default function DashboardHome({ onAddStudent }: { onAddStudent: () => vo
   const router = useRouter();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState<string>('user');
 
   useEffect(() => {
     const fetchStudents = async () => {
       try {
         const token = await user?.getIdToken();
+        const userInfoResponse = await fetch('/api/user/check', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        const userInfo = await userInfoResponse.json();
+        setRole(userInfo.userData?.role || 'user');
+
         const response = await fetch('/api/students/list', {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -75,6 +85,14 @@ export default function DashboardHome({ onAddStudent }: { onAddStudent: () => vo
     router.push(`/dashboard/student/${student.id}`);
   };
 
+  const handleAddStudent = () => {
+    if ((role === 'user' || role === 'Free User') && students.length >= 5) {
+      router.push('/checkout');
+    } else {
+      onAddStudent();
+    }
+  };
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -85,7 +103,7 @@ export default function DashboardHome({ onAddStudent }: { onAddStudent: () => vo
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Your Students</h1>
         <Button 
-          onClick={onAddStudent}
+          onClick={handleAddStudent}
           className="bg-[#396afc] text-white hover:bg-[#2948ff] font-satoshi-bold rounded-full flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
@@ -138,7 +156,7 @@ export default function DashboardHome({ onAddStudent }: { onAddStudent: () => vo
         <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-12 text-center">
           <div className="text-gray-500 mb-4">No students added yet</div>
           <Button
-            onClick={onAddStudent}
+            onClick={handleAddStudent}
             className="bg-[#396afc] text-white hover:bg-[#2948ff] font-satoshi-bold rounded-full flex items-center gap-2 mx-auto"
           >
             <Plus className="w-5 h-5" />

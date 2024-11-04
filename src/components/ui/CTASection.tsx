@@ -24,14 +24,14 @@ export default function CTASection() {
           </h2>
 
           <p className="text-xl text-white/80 mb-12 max-w-2xl mx-auto">
-            Join thousands of tutors who are delivering better results, saving time, and growing their business with TutorPlan.
+            Join thousands of tutors delivering better results, saving time, and growing their business with TutorPlan.
           </p>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
             <Link href="/signup">
               <Button className="w-full sm:w-auto bg-white text-[#396afc] hover:bg-white/90 font-satoshi-bold text-lg px-8 py-6 rounded-full h-auto hover:scale-105 transition-all duration-300 flex items-center gap-2">
-                Start Your Free Trial
+                Get Started for Free
                 <ArrowRight className="w-5 h-5" />
               </Button>
             </Link>
@@ -43,19 +43,13 @@ export default function CTASection() {
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              <span>7-day free trial</span>
+              <span>No credit card required</span>
             </div>
             <div className="flex items-center gap-2">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              <span>Secure payments</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Cancel anytime</span>
+              <span>Upgrade anytime</span>
             </div>
           </div>
         </div>

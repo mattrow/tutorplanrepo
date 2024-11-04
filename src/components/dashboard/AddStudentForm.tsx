@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { UserPlus, Info, ArrowLeft } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/hooks/useAuth';
 import ReactMarkdown from 'react-markdown';
+import { useRouter } from 'next/navigation';
 
 const LANGUAGE_LEVELS = [
   {
@@ -96,6 +97,7 @@ const NATIVE_LANGUAGES = [
 
 export default function AddStudentForm({ onBack }: { onBack: () => void }) {
   const { user } = useAuth();
+  const router = useRouter();
   const [selectedLevel, setSelectedLevel] = useState('');
   const [formData, setFormData] = useState({
     firstName: '',
@@ -106,6 +108,30 @@ export default function AddStudentForm({ onBack }: { onBack: () => void }) {
     startDate: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const checkStudentLimit = async () => {
+      const token = await user?.getIdToken();
+      const response = await fetch('/api/students/count', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        console.error('Failed to fetch student count');
+        return;
+      }
+      const data = await response.json();
+      const { count, role } = data;
+      if (role === 'Free User' && count >= 5) {
+        router.push('/checkout'); // Redirect to checkout page
+      }
+    };
+    if (user) {
+      checkStudentLimit();
+    }
+  }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

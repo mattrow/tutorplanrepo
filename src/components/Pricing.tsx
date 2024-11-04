@@ -1,6 +1,6 @@
 'use client';
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles, Shield, Zap, Users, BookOpen, MessageSquare, Brain } from "lucide-react";
+import { Check, Shield, Zap, Users, BookOpen, MessageSquare, Brain } from "lucide-react";
 import { useState } from "react";
 import {
   Accordion,
@@ -14,10 +14,9 @@ interface PricingProps {
   userId: string;
   userEmail: string;
   onSubscribe: (priceId: string) => Promise<void>;
-  trialEligible?: boolean;
 }
 
-export default function Pricing({ userId, userEmail, onSubscribe, trialEligible = true }: PricingProps) {
+export default function Pricing({ userId, userEmail, onSubscribe }: PricingProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubscribe = async (priceId: string) => {
@@ -61,13 +60,26 @@ export default function Pricing({ userId, userEmail, onSubscribe, trialEligible 
     },
     {
       icon: <Users className="w-5 h-5" />,
-      title: "Unlimited Students",
-      description: "Grow your tutoring business without limits"
+      title: "Up to 5 Students",
+      description: "Manage a limited number of students for free"
     },
     {
       icon: <BookOpen className="w-5 h-5" />,
       title: "CEFR-Aligned Content",
       description: "Professional curriculum standards"
+    },
+    {
+      icon: <MessageSquare className="w-5 h-5" />,
+      title: "Unlimited Resources",
+      description: "Access all lesson planning features"
+    }
+  ];
+
+  const proFeatures = [
+    {
+      icon: <Users className="w-5 h-5" />,
+      title: "Unlimited Students",
+      description: "Grow your tutoring business without limits"
     },
     {
       icon: <MessageSquare className="w-5 h-5" />,
@@ -78,20 +90,20 @@ export default function Pricing({ userId, userEmail, onSubscribe, trialEligible 
 
   const faqs = [
     {
-      question: "How does the free trial work?",
-      answer: "Start with full access to all Pro features for 7 days. No commitment required - cancel anytime before the trial ends and you won't be charged."
+      question: "Is there a free plan?",
+      answer: "Yes! Our Free Plan allows you to manage up to 5 students with unlimited access to resources."
     },
     {
-      question: "What happens after the trial?",
-      answer: "If you love TutorPlan (we think you will!), do nothing and your subscription will start automatically. If not, cancel with one click - no questions asked."
+      question: "What does the Professional Plan offer?",
+      answer: "The Professional Plan includes unlimited students and additional features like the Smart Feedback System."
     },
     {
       question: "Can I cancel my subscription?",
-      answer: "Yes! Cancel instantly at any time from your account settings. You'll continue to have access until the end of your billing period."
+      answer: "Yes! Cancel anytime from your account settings. You'll continue to have access until the end of your billing period."
     },
     {
       question: "Is my payment secure?",
-      answer: "Absolutely. We use Stripe for secure payment processing - the same system trusted by Amazon, Google, and Microsoft."
+      answer: "Absolutely. We use Stripe for secure payment processing—the same system trusted by Amazon, Google, and Microsoft."
     }
   ];
 
@@ -107,28 +119,57 @@ export default function Pricing({ userId, userEmail, onSubscribe, trialEligible 
       <div className="container mx-auto px-6 relative z-10">
         {/* Header */}
         <div className="text-center mb-16">
-          <div className="inline-flex items-center bg-white/10 backdrop-blur-sm border border-white/10 rounded-full px-4 py-2 text-white mb-6">
-            <Sparkles className="w-4 h-4 mr-2" />
-            <span className="font-satoshi-medium">7-Day Free Trial</span>
-          </div>
           <h2 className="text-4xl md:text-5xl font-satoshi-black text-white mb-6">
-            Transform Your Teaching Today
+            Choose the Plan That's Right for You
           </h2>
           <p className="text-xl text-white/80 max-w-2xl mx-auto">
-            Join thousands of tutors saving 30+ hours every month with AI-powered lesson planning
+            Start for free and upgrade anytime to unlock more features.
           </p>
         </div>
 
-        {/* Pricing Card */}
-        <div className="max-w-lg mx-auto">
-          <div className="bg-white/10 backdrop-blur-sm border-2 border-white/20 rounded-3xl p-8 hover:border-white/40 transition-all duration-300 hover:shadow-2xl transform hover:-translate-y-1">
+        {/* Pricing Cards */}
+        <div className="flex flex-col md:flex-row justify-center items-center gap-8">
+          {/* Free Plan */}
+          <div className="bg-white/10 backdrop-blur-sm border-2 border-white/20 rounded-3xl p-8 w-full max-w-md hover:border-white/40 transition-all duration-300 hover:shadow-2xl transform hover:-translate-y-1">
+            <div className="text-center mb-4">
+              <h3 className="text-2xl font-bold text-white mb-4">Free Plan</h3>
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <span className="text-4xl font-bold text-white">Free</span>
+              </div>
+              <div className="text-gray-200 font-medium">&nbsp;</div>
+            </div>
+
+            <Button
+              onClick={() => {/* Navigate to sign-up page */}}
+              className="w-full bg-white text-[#396afc] hover:bg-white/90 py-6 px-8 text-xl rounded-2xl font-bold h-auto hover:scale-105 transition-all duration-300"
+            >
+              Get Started for Free
+            </Button>
+
+            <div className="space-y-4 mb-2 mt-6">
+              {features.map((feature, index) => (
+                <div key={index} className="flex items-center gap-3 text-white/90">
+                  <div className="flex-shrink-0 w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
+                    {feature.icon}
+                  </div>
+                  <div>
+                    <div className="font-medium">{feature.title}</div>
+                    <div className="text-sm text-white/70">{feature.description}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Professional Plan */}
+          <div className="bg-white/10 backdrop-blur-sm border-2 border-white/20 rounded-3xl p-8 w-full max-w-md md:-mt-6 hover:border-white/40 transition-all duration-300 hover:shadow-2xl transform hover:-translate-y-1">
             <div className="text-center mb-4">
               <h3 className="text-2xl font-bold text-white mb-4">Professional Plan</h3>
               <div className="flex items-center justify-center gap-2 mb-2">
                 <span className="text-4xl font-bold text-white">$29</span>
                 <span className="text-white/80">/month</span>
               </div>
-              <div className="text-gray-200 font-medium">First 7 days free</div>
+              <div className="text-gray-200 font-medium">&nbsp;</div>
             </div>
 
             <Button
@@ -145,7 +186,7 @@ export default function Pricing({ userId, userEmail, onSubscribe, trialEligible 
                   Processing...
                 </>
               ) : (
-                'Start 7-Day Free Trial'
+                'Upgrade to Pro'
               )}
             </Button>
 
@@ -160,8 +201,8 @@ export default function Pricing({ userId, userEmail, onSubscribe, trialEligible 
               </div>
             </div>
 
-            <div className="space-y-4 mb-2">
-              {features.map((feature, index) => (
+            <div className="space-y-4 mb-2 mt-6">
+              {proFeatures.map((feature, index) => (
                 <div key={index} className="flex items-center gap-3 text-white/90">
                   <div className="flex-shrink-0 w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
                     {feature.icon}
@@ -173,8 +214,6 @@ export default function Pricing({ userId, userEmail, onSubscribe, trialEligible 
                 </div>
               ))}
             </div>
-
-            
           </div>
         </div>
 
