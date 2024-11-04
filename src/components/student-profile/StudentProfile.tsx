@@ -205,7 +205,8 @@ const StudentProfile = ({ studentId, onBack }: StudentProfileProps) => {
               {student.startDate
                 ? new Date(student.startDate).toLocaleDateString('en-US', {
                     month: 'long',
-                    year: 'numeric'
+                    year: 'numeric',
+                    timeZone: 'UTC'
                   })
                 : 'Not available'}
             </div>

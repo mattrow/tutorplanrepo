@@ -27,9 +27,13 @@ export async function GET(
       return NextResponse.json({ error: 'Student not found' }, { status: 404 });
     }
 
+    const studentData = studentDoc.data();
+
     const student = {
       id: studentDoc.id,
-      ...studentDoc.data()
+      ...studentData,
+      // Ensure startDate is included and has a fallback
+      startDate: studentData?.startDate || studentData?.createdAt,
     };
 
     return NextResponse.json({ student });

@@ -211,6 +211,41 @@ const ProgressPage = ({ params }: ProgressPageProps) => {
     }
   };
 
+  const handleStatusChange = async (topicId: string, newStatus: Topic['status']) => {
+    try {
+      // Update the topic status in the backend
+      const token = await user?.getIdToken();
+
+      const response = await fetch(`/api/students/${studentId}/topics/${topicId}/status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update topic status');
+      }
+
+      // Update the state to reflect the new status
+      setColumns((prevColumns) =>
+        prevColumns.map((column) => ({
+          ...column,
+          topics: column.topics.map((topic) => {
+            if (topic.id === topicId) {
+              return { ...topic, status: newStatus };
+            }
+            return topic;
+          }),
+        }))
+      );
+    } catch (error) {
+      console.error('Error updating topic status:', error);
+    }
+  };
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -281,14 +316,15 @@ const ProgressPage = ({ params }: ProgressPageProps) => {
                             {topic.topicName}
                           </h3>
                           <div className="flex items-center gap-2">
-                            <div
-                              className={`w-2 h-2 rounded-full ${getStatusColor(
-                                topic.status
-                              )}`}
-                            ></div>
-                            <span className="text-sm text-gray-600">
-                              {getStatusText(topic.status)}
-                            </span>
+                            <select
+                              value={topic.status}
+                              onChange={(e) => handleStatusChange(topic.id, e.target.value as Topic['status'])}
+                              className="text-sm text-gray-600 bg-transparent border-none focus:outline-none"
+                            >
+                              <option value="not started">Not Started</option>
+                              <option value="in progress">In Progress</option>
+                              <option value="completed">Completed</option>
+                            </select>
                           </div>
                         </div>
                         <p className="text-sm text-gray-600">
