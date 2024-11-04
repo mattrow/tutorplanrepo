@@ -1,5 +1,3 @@
-// src/components/SharedLessonView/TopicSections/TopicNavigation.tsx
-
 import React from 'react';
 import { BookOpen, FileText, ListChecks, Lightbulb } from 'lucide-react';
 import { GeneratedTopic } from '@/types/lesson';
@@ -22,18 +20,18 @@ const TopicNavigation: React.FC<TopicNavigationProps> = ({
   ];
 
   return (
-    <div className="flex flex-wrap gap-2 mb-6">
+    <div className="flex flex-wrap gap-3">
       {sections.map(({ id, label, icon: Icon }) => (
         <button
           key={id}
           onClick={() => onSectionChange(id)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
             activeSection === id
-              ? 'bg-[#396afc] text-white'
-              : 'text-gray-600 hover:bg-gray-100'
+              ? 'bg-[#396afc] text-white shadow-md transform scale-105'
+              : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
           }`}
         >
-          <Icon className="w-4 h-4" />
+          <Icon className={`w-5 h-5 ${activeSection === id ? 'animate-pulse' : ''}`} />
           {label}
         </button>
       ))}
