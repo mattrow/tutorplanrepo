@@ -18,7 +18,7 @@ const geistMono = localFont({
 
 
 export const metadata: Metadata = {
-  title: "TutorPlan - AI-Powered Lesson Planning",
+  title: "TutorPlan - Generate Lessons & Homework",
   description: "Create personalized learning paths and lesson plans instantly with AI. Keep your students motivated with tailored educational content generated with just one click.",
   icons: {
     icon: [
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: 'TutorPlan' }],
   openGraph: {
-    title: 'TutorPlan - AI-Powered Lesson Planning',
+    title: 'TutorPlan - Generate Lessons & Homework',
     description: 'Create personalized learning paths and lesson plans instantly with AI. Keep your students motivated with tailored educational content.',
     url: 'https://tutorplan.co', // Update this with your actual domain
     siteName: 'TutorPlan',
@@ -69,7 +69,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'TutorPlan - AI-Powered Lesson Planning',
+    title: 'TutorPlan - Generate Lessons & Homework',
     description: 'Create personalized learning paths and lesson plans instantly with AI. Keep your students motivated with tailored educational content.',
     images: ['/og-image.png'],
     creator: '@tutorplan', // Update this with your actual Twitter handle if you have one
