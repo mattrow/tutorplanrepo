@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { Analytics } from "@vercel/analytics/react"
 
 import "./globals.css";
 import { AuthProvider } from "../hooks/useAuth";
@@ -88,7 +89,7 @@ export default function RootLayout({
       >
         <AuthProvider>{children}</AuthProvider>
         <ToastContainer />
-
+        <Analytics/>
       </body>
     </html>
   );
