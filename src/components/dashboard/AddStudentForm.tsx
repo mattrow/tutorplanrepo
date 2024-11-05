@@ -153,7 +153,10 @@ export default function AddStudentForm({ onBack }: { onBack: () => void }) {
         throw new Error('Failed to add student');
       }
 
-      onBack();
+      const data = await response.json();
+      const { studentId } = data;
+
+      router.push(`/dashboard/student/${studentId}`);
       
     } catch (error) {
       console.error('Error adding student:', error);

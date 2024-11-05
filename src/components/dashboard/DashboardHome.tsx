@@ -98,7 +98,7 @@ export default function DashboardHome({ onAddStudent }: { onAddStudent: () => vo
   }
 
   return (
-    <div className="p-8 bg-[#f8f9fc]">
+    <div className="p-8 bg-[#f8f9fc] min-h-screen flex flex-col">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Your Students</h1>
@@ -153,15 +153,31 @@ export default function DashboardHome({ onAddStudent }: { onAddStudent: () => vo
         </div>
       ) : (
         /* Empty State */
-        <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-12 text-center">
-          <div className="text-gray-500 mb-4">No students added yet</div>
+        <div className="flex-grow flex flex-col items-center justify-center bg-white rounded-2xl shadow-md border border-gray-200 p-12 text-center">
+          <div className="text-gray-500 mb-6 text-lg">No students added yet</div>
           <Button
             onClick={handleAddStudent}
-            className="bg-[#396afc] text-white hover:bg-[#2948ff] font-satoshi-bold rounded-full flex items-center gap-2 mx-auto"
+            className="bg-[#396afc] text-white hover:bg-[#2948ff] font-satoshi-bold rounded-full flex items-center gap-2 animate-grow-shrink"
           >
             <Plus className="w-5 h-5" />
             Add Your First Student
           </Button>
+          <div className="mt-8 flex flex-col items-center">
+            <svg
+              className="w-6 h-6 text-gray-400 animate-bounce-up"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M12 17V3m0 0l-5 5m5-5l5 5"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <p className="mt-4 text-gray-500 text-sm">Let's add your first student</p>
+          </div>
         </div>
       )}
     </div>
