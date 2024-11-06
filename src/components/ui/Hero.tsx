@@ -69,7 +69,7 @@ export default function Hero() {
           <div className="relative rounded-2xl overflow-hidden shadow-2xl transform hover:scale-[1.02] transition-transform duration-300">
             <div className="w-full relative" style={{ paddingTop: '56.25%' }}>
               <iframe
-                src="https://player.vimeo.com/video/1025936639?h=79dc34e71d&title=0&byline=0&portrait=0&autoplay=0&muted=0"
+                src="https://www.youtube.com/embed/oNSko9CGdKA"
                 className="absolute top-0 left-0 w-full h-full rounded-2xl"
                 frameBorder="0"
                 allow="autoplay; fullscreen; picture-in-picture"
