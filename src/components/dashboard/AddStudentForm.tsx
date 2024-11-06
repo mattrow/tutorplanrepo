@@ -149,16 +149,16 @@ export default function AddStudentForm({ onBack }: { onBack: () => void }) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ ...formData, startDate })
+        body: JSON.stringify(formData)
       });
-
+  
       if (!response.ok) {
         throw new Error('Failed to add student');
       }
-
+  
       const data = await response.json();
       const { studentId } = data;
-
+  
       router.push(`/dashboard/student/${studentId}`);
       
     } catch (error) {

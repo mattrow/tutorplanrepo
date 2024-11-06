@@ -25,16 +25,14 @@ export async function POST(req: NextRequest) {
     // Get the student data from the request
     const studentData = await req.json();
 
-    // Validate startDate
-    if (!studentData.startDate) {
+    // Validate and parse startDate
+    const startDate = new Date(studentData.startDate);
+    if (isNaN(startDate.getTime())) {
       return NextResponse.json(
-        { error: 'Start date is required' },
+        { error: 'Invalid start date' },
         { status: 400 }
       );
     }
-
-    // Parse the startDate to a valid date string
-    const startDate = new Date(`${studentData.startDate}-01T00:00:00Z`).toISOString();
 
     // Get curriculum data based on language and level
     const languageKey = studentData.language.toLowerCase();
@@ -90,7 +88,7 @@ export async function POST(req: NextRequest) {
             ...studentData,
             subject: studentData.language,
             completedLessons: 0,
-            startDate: startDate,
+            startDate: startDate.toISOString(),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             currentLevel: studentData.level,
@@ -102,7 +100,7 @@ export async function POST(req: NextRequest) {
 
         await levelsRef.doc(studentData.level).set({
           lessons,
-          startDate: startDate,
+          startDate: startDate.toISOString(),
           completedTopics: 0,
           totalTopics: sortedTopics.length,
         });
