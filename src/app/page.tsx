@@ -12,6 +12,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import { analytics } from '@/firebase/config';
 import { logEvent } from 'firebase/analytics';
+import ProcessDemo from '@/components/ui/ProcessDemo';
+import Testimonials from '@/components/ui/Testimonials';
 
 export default function ModernLandingPage() {
   const { user, loading } = useAuth();
@@ -67,17 +69,21 @@ export default function ModernLandingPage() {
       {/* Main Content */}
       <main className="flex-grow w-full">
         <div data-animate>
-          <VideoDemo />
+          <ProcessDemo />
         </div>
-        <div data-animate>
+        
+        {/* <div data-animate>
           <Features />
+        </div> */}
+        <div data-animate>
+          <Testimonials />
         </div>
         <div data-animate>
           <FAQ />
         </div>
-        <div data-animate>
+        {/* <div data-animate>
           <HowItWorks />
-        </div>
+        </div> */}
         <div data-animate>
           <CTASection />
         </div>
