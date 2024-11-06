@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from '@/hooks/useAuth';
 import ReactMarkdown from 'react-markdown';
 import { useRouter } from 'next/navigation';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 const LANGUAGE_LEVELS = [
   {
@@ -107,6 +109,7 @@ export default function AddStudentForm({ onBack }: { onBack: () => void }) {
     level: '',
     startDate: ''
   });
+  const [startDate, setStartDate] = useState<Date | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -146,7 +149,7 @@ export default function AddStudentForm({ onBack }: { onBack: () => void }) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({ ...formData, startDate })
       });
 
       if (!response.ok) {
@@ -287,12 +290,19 @@ export default function AddStudentForm({ onBack }: { onBack: () => void }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
-            <input
-              type="month"
-              name="startDate"
-              required
+            <DatePicker
+              selected={startDate}
+              onChange={(date: Date | null) => {
+                setStartDate(date);
+                if (date) {
+                  setFormData({ ...formData, startDate: date.toISOString() });
+                }
+              }}
+              dateFormat="MM/yyyy"
+              showMonthYearPicker
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#396afc] focus:border-[#396afc] text-gray-900"
-              onChange={handleChange}
+              placeholderText="Select start month and year"
+              required
             />
           </div>
 
