@@ -1,7 +1,7 @@
 // src/app/api/students/[id]/lessons/[lessonId]/homework/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, firestore } from '@/firebase/admin';
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { PDFDocument, StandardFonts, rgb, translate } from 'pdf-lib';
 import OpenAI from 'openai';
 import { PDFFont } from 'pdf-lib';
 
@@ -25,7 +25,7 @@ export async function POST(
     const decodedToken = await adminAuth.verifyIdToken(token);
     const userId = decodedToken.uid;
 
-    // Fetch the lesson plan
+    // Fetch student's data
     const studentRef = firestore
       .collection('users')
       .doc(userId)
@@ -39,8 +39,10 @@ export async function POST(
       return NextResponse.json({ error: 'Student not found' }, { status: 404 });
     }
 
-    const { firstName, lastName, currentLevel, language } = studentData;
+    // Extract nativeLanguage along with other properties
+    const { firstName, lastName, currentLevel, language, nativeLanguage } = studentData;
 
+    // Fetch the lesson from the learning plan to get its number and title
     const levelRef = studentRef
       .collection('subject')
       .doc(language.toLowerCase())
@@ -49,34 +51,47 @@ export async function POST(
 
     const levelDoc = await levelRef.get();
     const levelData = levelDoc.data();
+    const lessonsInPlan = levelData?.lessons || [];
 
-    if (!levelData || !levelData.lessons) {
-      return NextResponse.json({ error: 'Lesson plan not found' }, { status: 404 });
+    // Find the lesson in the learning plan matching the lessonId
+    const lessonInPlan = lessonsInPlan.find((lesson: any) => lesson.id === lessonId);
+
+    if (!lessonInPlan) {
+      return NextResponse.json({ error: 'Lesson not found in learning plan' }, { status: 404 });
     }
 
-    // Find the lesson based on lessonId
-    const lesson = levelData.lessons.find((l: any) => l.id === lessonId);
+    const lessonNumber = lessonInPlan.number || '1'; // Use lessonInPlan.number
+    const lessonTitle = lessonInPlan.title || `Lesson ${lessonNumber}`;
 
-    if (!lesson) {
+    // Fetch the generated lesson to get topics
+    const lessonRef = studentRef.collection('lessons').doc(lessonId);
+    const lessonDoc = await lessonRef.get();
+
+    if (!lessonDoc.exists) {
       return NextResponse.json({ error: 'Lesson not found' }, { status: 404 });
     }
 
-    const topics = lesson.topics || [];
+    const lessonData = lessonDoc.data();
+    const topics = lessonData?.topics || [];
 
     if (!topics || topics.length === 0) {
       return NextResponse.json({ error: 'No topics found for this lesson' }, { status: 404 });
     }
 
     // Generate exercises based on the lesson topics
-    const exercises = await generateExercises(topics, currentLevel, language.toLowerCase(), language);
+    const exercises = await generateExercises(
+      topics,
+      currentLevel,
+      nativeLanguage.toLowerCase(), // Correct native language
+      language.toLowerCase() // Learning language
+    );
 
     // Generate the PDF document
-    const pdfBytes = await createHomeworkPDF(exercises, lesson.title);
+    const pdfBytes = await createHomeworkPDF(exercises, lessonTitle); // Use the correct lessonTitle
 
     // Construct the filename
     const studentFirstName = firstName || 'Student';
     const studentLastNameInitial = lastName ? lastName.charAt(0) : '';
-    const lessonNumber = lesson.lessonNumber || '1'; // Default to '1' if undefined
     const topicNames = topics.map((topic: any) => topic.topicName).join(', ');
 
     // Sanitize filename components (remove invalid characters)
@@ -90,7 +105,7 @@ export async function POST(
     console.log('lessonNumber:', lessonNumber);
     console.log('topicNames:', topicNames);
 
-    // Construct the filename
+    // Construct the filename with the correct lesson number
     const filename = `${sanitize(studentFirstName)} ${sanitize(
       studentLastNameInitial
     )} - Lesson ${lessonNumber} - ${sanitize(topicNames)} Homework.pdf`;
@@ -142,7 +157,7 @@ async function generateExercises(
   5. Error Correction Exercises
 - Ensure that each exercise is appropriate for a student at the **${studentLevel}** level.
 - **Provide clear and complete instructions** for each exercise.
-- **Include a hint** for each exercise to help the student.
+- **Include a hint** in the students native language of ${studentNativeLanguage} for each exercise to help the student.
 - **Avoid any interactive elements**; the exercises should be suitable for a PDF document.
 - **Use complete sentences** and ensure that content is not cut off.
 
@@ -161,7 +176,7 @@ Provide the exercises in **JSON format only**, with the following structure:
           "question": "The question text in ${studentLearningLanguage}.",
           "options": ["Option 1", "Option 2", "Option 3"], // Include this field for multiple-choice questions
           "answer": "The correct answer.",
-          "hint": "A small hint in ${studentLearningLanguage}, include translation in ${studentNativeLanguage} if helpful."
+          "hint": "A small hint in ${studentNativeLanguage}"
         },
         // Additional questions...
       ]
@@ -178,7 +193,7 @@ Provide the exercises in **JSON format only**, with the following structure:
   - For fill-in-the-blank, indicate blanks with "___".
   - For translation exercises, specify whether to translate from ${studentLearningLanguage} to ${studentNativeLanguage} or vice versa.
 - For the "options" field in multiple-choice questions, include plausible distractors.
-- For the "hint" field, provide a concise hint to help the student.
+- For the "hint" field, provide a concise hint to help the student in the students native language of ${studentNativeLanguage}.
 
 **Topic Description:**
 

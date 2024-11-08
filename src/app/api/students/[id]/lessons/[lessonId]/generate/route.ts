@@ -94,7 +94,7 @@ Provide the following information in **JSON format only**, with keys exactly as 
 
 {
   "id": "${topic.id}", // Include the original topic ID
-  "title": "Title of the topic",
+  "title": "Title of the topic in **English**",
   "introduction": {
     "explanation": "An explanation of the topic in English suitable for ${studentLevel} level.",
     "keyPoints": ["Key point 1 in English", "Key point 2 in English", "Key point 3 in English"]
@@ -190,10 +190,26 @@ Ensure the JSON is properly formatted, uses double quotes for keys and strings, 
     // Save the generated lesson to Firestore
     const lessonRef = studentRef.collection('lessons').doc(lessonId);
 
-    // Fetch existing lessons to determine the next lesson number
-    const lessonsSnapshot = await studentRef.collection('lessons').get();
-    const lessonCount = lessonsSnapshot.size;
-    const lessonNumber = lessonCount + 1; // Assuming you want to increment the lesson number
+    // Fetch the lesson from the learning plan to get its number
+    const levelRef = studentRef
+      .collection('subject')
+      .doc(studentLearningLanguage.toLowerCase())
+      .collection('levels')
+      .doc(studentLevel);
+
+    const levelDoc = await levelRef.get();
+    const levelData = levelDoc.data();
+    const lessonsInPlan = levelData?.lessons || [];
+
+    // Find the lesson in the learning plan matching the lessonId
+    const lessonInPlan = lessonsInPlan.find((lesson: any) => lesson.id === lessonId);
+
+    if (!lessonInPlan) {
+      return NextResponse.json({ error: 'Lesson not found in learning plan' }, { status: 404 });
+    }
+
+    const lessonNumber = lessonInPlan.number;
+    const lessonTitle = lessonInPlan.title || `Lesson ${lessonNumber}`;
 
     await lessonRef.set(
       {
@@ -207,8 +223,8 @@ Ensure the JSON is properly formatted, uses double quotes for keys and strings, 
         topics, // Include the original topics with IDs
         public: false,
         createdAt: new Date().toISOString(),
-        title: `Lesson ${lessonNumber}`,
-        number: lessonNumber, // Set the lesson number here
+        title: lessonTitle,
+        number: lessonNumber, // Use the correct lesson number here
       },
       { merge: true }
     );
