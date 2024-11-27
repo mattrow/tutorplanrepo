@@ -3,6 +3,7 @@ import { adminAuth, firestore } from '@/firebase/admin';
 import OpenAI from 'openai';
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
+import { shuffle } from 'lodash';
 
 export const maxDuration = 120; // 120 seconds (2 minutes)
 export const dynamic = 'force-dynamic';
@@ -27,7 +28,8 @@ const LessonSchema = z.object({
     question: z.string(),
     type: z.string(),
     options: z.array(z.string()),
-    hint: z.string()
+    correctOptionIndex: z.number().int(),
+    hint: z.string().optional()
   }))
 });
 
@@ -122,9 +124,9 @@ Ensure the content follows this structure. Do not include the example in the out
   "examples": [
     {
       "context": "Optional context or scenario in English",
-      "correct": "Correct example sentence or usage in ${studentLearningLanguage}",
-      "incorrect": "Incorrect example sentence or common mistake in ${studentLearningLanguage}",
-      "explanation": "Explanation in English of why it's correct or incorrect. Include translations in ${studentNativeLanguage} where helpful."
+      "correct": "Correct example sentence or usage in ${studentLearningLanguage}.",
+      "incorrect": "Incorrect example sentence in ${studentLearningLanguage} that contains a common grammatical error, misuse of vocabulary, incorrect verb conjugation, or other language mistake relevant to the topic.",
+      "explanation": "Explanation in English of why the incorrect example is wrong and how to correct it. Include translations in ${studentNativeLanguage} where helpful."
     }
     // Include around 5-7 examples in this format
   ],
@@ -133,13 +135,24 @@ Ensure the content follows this structure. Do not include the example in the out
       "id": "Unique ID for the exercise",
       "question": "Exercise question in English.",
       "type": "multiple-choice",
-      "options": ["Option 1 in ${studentLearningLanguage}", "Option 2 in ${studentLearningLanguage}", "Option 3 in ${studentLearningLanguage}"],
-      "hint": "Optional hint for the exercise, in English. Provide translations in ${studentNativeLanguage} where helpful."
+      "options": [
+        "Option 1 in ${studentLearningLanguage}.",
+        "Option 2 in ${studentLearningLanguage}.",
+        "Option 3 in ${studentLearningLanguage}."
+      ],
+      "correctOptionIndex": Index of the correct option (starting from 0), // e.g., 1
+      "hint": "Optional hint for the exercise, in English. Provide translations in ${studentNativeLanguage} where particularly helpful."
     }
     // Include around 5-7 exercises in this format
-    // Ensure that the exercises have one correct answer and two incorrect answers that are plausible mistakes
+    // Ensure that each exercise has one correct answer and two incorrect answers that contain common errors such as grammatical mistakes, misused vocabulary, or incorrect sentence structure.
   ]
 }
+
+// **Example (do not include in the output)**:
+
+- **Correct**: "I have been learning ${studentLearningLanguage} for two years."
+- **Incorrect**: "I have been learn ${studentLearningLanguage} since two years."
+- **Explanation**: "The incorrect sentence misuses the verb form 'learn' instead of 'learning' and incorrectly uses 'since' instead of 'for'."
 
 Ensure the JSON is properly formatted, uses double quotes for keys and strings, and can be parsed by JSON parsers. Do not include any comments, code fences, extra text, or explanations within or outside the JSON. Only output the JSON object.`;
 
@@ -170,6 +183,11 @@ Ensure the JSON is properly formatted, uses double quotes for keys and strings, 
       try {
         const content = response.choices[0].message?.content?.trim() ?? '';
         parsedContent = JSON.parse(content);
+
+        // Shuffle options and adjust correctOptionIndex for each exercise
+        parsedContent.exercises.forEach((exercise: any) => {
+          shuffleOptionsAndAdjustIndex(exercise);
+        });
       } catch (e) {
         console.error('Failed to parse OpenAI response as JSON:', e);
         throw new Error('Failed to parse OpenAI response');
@@ -238,4 +256,23 @@ Ensure the JSON is properly formatted, uses double quotes for keys and strings, 
       { status: 500 }
     );
   }
+}
+
+// Shuffle function
+function shuffleOptionsAndAdjustIndex(exercise: any) {
+  const options = exercise.options;
+  const correctIndex = exercise.correctOptionIndex;
+
+  // Pair options with a flag indicating if it's correct
+  const optionsWithFlag = options.map((option: string, index: number) => ({
+    option,
+    isCorrect: index === correctIndex,
+  }));
+
+  // Shuffle the options
+  const shuffledOptions = shuffle(optionsWithFlag);
+
+  // Update the options and find the new correctOptionIndex
+  exercise.options = shuffledOptions.map((item: any) => item.option);
+  exercise.correctOptionIndex = shuffledOptions.findIndex((item: any) => item.isCorrect);
 }

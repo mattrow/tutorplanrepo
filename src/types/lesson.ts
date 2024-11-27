@@ -12,7 +12,8 @@ export interface Topic {
     id: string;
     question: string;
     type: string; // 'multiple-choice', 'fill-in-the-blank', etc.
-    options?: string[];
+    options: string[];
+    correctOptionIndex: number;
     hint?: string;
   }
   
