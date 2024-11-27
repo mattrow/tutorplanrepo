@@ -354,8 +354,8 @@ const LessonPage = ({ lesson, user, onShareLesson, sharing }: LessonPageProps) =
   // Function to launch confetti
   const launchConfetti = useCallback(() => {
     confetti({
-      particleCount: 100,
-      spread: 70,
+      particleCount: 300,
+      spread: 150,
       origin: { y: 0.6 },
     });
   }, []);

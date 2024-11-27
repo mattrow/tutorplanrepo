@@ -43,6 +43,10 @@ const LessonCard = ({
   const [showSuccess, setShowSuccess] = useState(false);
   const successTimeoutRef = useRef<NodeJS.Timeout>();
 
+  const lessonTitle = `Lesson ${lesson.number}: ${lesson.topics
+    .map((t) => t.topicName)
+    .join(', ')}`;
+
   // Clean up timeout on unmount
   useEffect(() => {
     return () => {
@@ -230,7 +234,7 @@ const LessonCard = ({
     <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 flex">
       {/* Left Side: Topics */}
       <div className="flex-1">
-        <h2 className="text-xl font-semibold">{lesson.title}</h2>
+        <h2 className="text-xl font-semibold">{lessonTitle}</h2>
 
         <SortableContext
           id={lessonId}

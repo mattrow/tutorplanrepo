@@ -137,6 +137,7 @@ Ensure the content follows this structure. Do not include the example in the out
       "hint": "Optional hint for the exercise, in English. Provide translations in ${studentNativeLanguage} where helpful."
     }
     // Include around 5-7 exercises in this format
+    // Ensure that the exercises have one correct answer and two incorrect answers that are plausible mistakes
   ]
 }
 
