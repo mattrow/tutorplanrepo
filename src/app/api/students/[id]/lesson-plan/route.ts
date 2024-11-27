@@ -15,7 +15,6 @@ export async function GET(
     const decodedToken = await adminAuth.verifyIdToken(token);
     const userId = decodedToken.uid;
 
-    // Fetch student's current level and language
     const studentRef = firestore
       .collection('users')
       .doc(userId)
@@ -31,7 +30,6 @@ export async function GET(
 
     const { currentLevel, language } = studentData;
 
-    // Fetch lessons from Firestore
     const levelRef = studentRef
       .collection('subject')
       .doc(language.toLowerCase())
@@ -45,10 +43,8 @@ export async function GET(
       return NextResponse.json({ error: 'No lessons found' }, { status: 404 });
     }
 
-    // Update the lessons array to include the 'generated' status
     const lessons = await Promise.all(
       levelData.lessons.map(async (lesson: any) => {
-        // Check if the lesson has been generated
         const lessonRef = studentRef.collection('lessons').doc(lesson.id);
         const lessonDoc = await lessonRef.get();
         const generated = lessonDoc.exists && lessonDoc.data()?.generated === true;
@@ -60,19 +56,21 @@ export async function GET(
           date: lesson.date,
           status: lesson.status,
           brief: lesson.brief,
-          generated, // Include generated status
+          generated,
           topics: lesson.topics.map((t: any) => ({
             id: t.id,
             topicName: t.topicName,
             topicDescription: t.topicDescription,
             order: t.order,
             status: t.status,
-            type: t.type, // Include the type field
+            type: t.type,
             isUserAdded: t.isUserAdded || false,
           })),
         };
       })
     );
+
+    lessons.sort((a, b) => a.number - b.number);
 
     return NextResponse.json({ lessons });
   } catch (error) {

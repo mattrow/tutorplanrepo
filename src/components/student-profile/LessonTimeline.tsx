@@ -7,12 +7,11 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  closestCorners,
+  pointerWithin,
   DragStartEvent,
   DragOverlay,
-  DragOverEvent,
   UniqueIdentifier,
-  pointerWithin,
+  DragOverEvent,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -25,7 +24,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Lesson } from '@/types/lesson';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import { useRouter, usePathname } from 'next/navigation';
-import { Button } from '@/components/ui/button'; // Ensure you have a Button component
+import { Button } from '@/components/ui/button';
 
 interface LessonTimelineProps {
   studentId: string;
@@ -33,15 +32,18 @@ interface LessonTimelineProps {
   onLevelChange?: (newLevel: string) => void;
 }
 
-// Define the levels
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+
+type ActiveItem =
+  | { type: 'lesson'; lesson: Lesson }
+  | { type: 'topic'; topic: any; lessonId: string };
 
 const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimelineProps) => {
   const { user } = useAuth();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
-  const [activeTopic, setActiveTopic] = useState<any>(null);
+  const [activeItem, setActiveItem] = useState<ActiveItem | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const initialLessonsRef = useRef<Lesson[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -93,7 +95,6 @@ const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimeli
       if (hasChanges) {
         const confirmLeave = confirm('You have unsaved changes. Do you really want to leave?');
         if (!confirmLeave) {
-          // Navigate back to previous path
           router.replace(previousPathname);
         } else {
           setPreviousPathname(pathname);
@@ -113,7 +114,6 @@ const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimeli
       setLoading(true);
       const token = await user?.getIdToken();
 
-      // Fetch the lesson plan
       const response = await fetch(`/api/students/${studentId}/lesson-plan`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -135,7 +135,7 @@ const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimeli
 
   const findContainer = (id: UniqueIdentifier): UniqueIdentifier | null => {
     if (lessons.some((lesson) => lesson.id === id)) {
-      return id; // The id corresponds to a lesson
+      return id;
     }
 
     for (const lesson of lessons) {
@@ -148,13 +148,24 @@ const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimeli
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
+    const activeType = active.data.current?.type;
+
     setActiveId(active.id);
 
-    const activeLessonId = findContainer(active.id);
-    if (activeLessonId) {
-      const lesson = lessons.find((l) => l.id === activeLessonId);
-      const topic = lesson?.topics.find((t) => t.id === active.id);
-      setActiveTopic(topic);
+    if (activeType === 'lesson') {
+      const lesson = lessons.find((l) => l.id === active.id);
+      if (lesson) {
+        setActiveItem({ type: 'lesson', lesson });
+      }
+    } else if (activeType === 'topic') {
+      const activeLessonId = findContainer(active.id);
+      if (activeLessonId) {
+        const lesson = lessons.find((l) => l.id === activeLessonId);
+        const topic = lesson?.topics.find((t) => t.id === active.id);
+        if (topic && lesson) {
+          setActiveItem({ type: 'topic', topic, lessonId: activeLessonId as string });
+        }
+      }
     }
   };
 
@@ -195,11 +206,9 @@ const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimeli
         );
         const newOverTopics = [...overLesson.topics];
 
-        // Determine where to insert in the over lesson
         let overIndex = overLesson.topics.findIndex((topic) => topic.id === over.id);
 
         if (overIndex === -1) {
-          // If over.id is the container id or topic not found, insert at the end
           overIndex = newOverTopics.length;
         }
 
@@ -211,7 +220,7 @@ const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimeli
 
         return newLessons;
       });
-      setHasChanges(true); // Indicate that there are unsaved changes
+      setHasChanges(true);
     }
   };
 
@@ -219,7 +228,7 @@ const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimeli
     const { active, over } = event;
 
     setActiveId(null);
-    setActiveTopic(null);
+    setActiveItem(null);
 
     if (!over) return;
 
@@ -244,15 +253,23 @@ const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimeli
           };
           return newLessons;
         });
-        setHasChanges(true); // Indicate that there are unsaved changes
+        setHasChanges(true);
       }
-    } else {
-      // Moving to a different lesson
-      // State was updated during handleDragOver
-      setHasChanges(true); // Indicate that there are unsaved changes
-    }
+    } else if (active.data.current?.type === 'lesson' && over.data.current?.type === 'lesson') {
+      const activeIndex = lessons.findIndex((lesson) => lesson.id === active.id);
+      const overIndex = lessons.findIndex((lesson) => lesson.id === over.id);
 
-    // Remove the backend update from here
+      if (activeIndex !== overIndex) {
+        setLessons((prevLessons) => {
+          const newLessons = arrayMove(prevLessons, activeIndex, overIndex).map((lesson, index) => ({
+            ...lesson,
+            number: index + 1,
+          }));
+          return newLessons;
+        });
+        setHasChanges(true);
+      }
+    }
   };
 
   const handleSave = async () => {
@@ -267,20 +284,17 @@ const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimeli
         },
         body: JSON.stringify({ lessons }),
       });
-      setHasChanges(false); // Reset unsaved changes indicator
+      setHasChanges(false);
 
-      // Re-fetch updated lessons
       await fetchLessonPlan();
     } catch (error) {
       console.error('Error updating topic order:', error);
-      // Optionally show an error message to the user
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleCancel = () => {
-    // Reset lessons to the initial state
     setLessons(initialLessonsRef.current);
     setHasChanges(false);
   };
@@ -300,7 +314,6 @@ const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimeli
     };
   }, [hasChanges]);
 
-  // Add this function
   const handleAddTopic = (lessonId: string, newTopic: any) => {
     setLessons((prevLessons) =>
       prevLessons.map((lesson) =>
@@ -312,7 +325,7 @@ const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimeli
           : lesson
       )
     );
-    setHasChanges(true); // Indicate that there are unsaved changes
+    setHasChanges(true);
   };
 
   const handleDeleteTopic = (lessonId: string, topicId: string) => {
@@ -321,7 +334,6 @@ const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimeli
         if (lesson.id === lessonId) {
           const topicToDelete = lesson.topics.find((topic) => topic.id === topicId);
           if (topicToDelete && topicToDelete.isUserAdded) {
-            // Only delete if the topic is user-added
             return {
               ...lesson,
               topics: lesson.topics.filter((topic) => topic.id !== topicId),
@@ -331,7 +343,7 @@ const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimeli
         return lesson;
       })
     );
-    setHasChanges(true); // Indicate that there are unsaved changes
+    setHasChanges(true);
   };
 
   const handleLessonGenerated = (lessonId: string) => {
@@ -342,7 +354,6 @@ const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimeli
     );
   };
 
-  // Function to get the next level
   const getNextLevel = (currentLevel: string): string => {
     const levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
     const currentIndex = levels.indexOf(currentLevel);
@@ -374,18 +385,13 @@ const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimeli
 
       const data = await response.json();
       console.log(data.message);
-      // Update the current level
       setCurrentLevel(data.newLevel);
-      // Re-fetch lessons
       await fetchLessons();
-      // Notify parent component
       if (onLevelChange) {
         onLevelChange(data.newLevel);
       }
-      // Optionally, show success message to the user
     } catch (error) {
       console.error('Error advancing to next level:', error);
-      // Optionally, show error message to the user
     } finally {
       setIsAdvancing(false);
     }
@@ -409,37 +415,57 @@ const LessonTimeline = ({ studentId, studentLevel, onLevelChange }: LessonTimeli
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="mt-8 space-y-4">
-          {lessons.map((lesson) => (
-            <SortableContext
-              key={lesson.id}
-              id={lesson.id}
-              items={lesson.topics.map((topic) => topic.id)}
-              strategy={verticalListSortingStrategy}
-            >
+        <SortableContext
+          items={lessons.map(lesson => lesson.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="mt-8 space-y-4">
+            {lessons.map((lesson) => (
+              <SortableContext
+                key={lesson.id}
+                id={lesson.id}
+                items={lesson.topics.map((topic) => topic.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <LessonCard
+                  lesson={lesson}
+                  isClickable={
+                    lesson.status === 'completed' ||
+                    (lesson.status === 'upcoming' &&
+                      lessons.filter((l) => l.status === 'upcoming')[0].id === lesson.id)
+                  }
+                  onAddTopic={handleAddTopic}
+                  onDeleteTopic={handleDeleteTopic}
+                  studentId={studentId}
+                  onLessonGenerated={handleLessonGenerated}
+                  isGeneratingGlobal={isGeneratingGlobal}
+                  setIsGeneratingGlobal={setIsGeneratingGlobal}
+                />
+              </SortableContext>
+            ))}
+          </div>
+        </SortableContext>
+
+        <DragOverlay>
+          {activeItem && activeId ? (
+            activeItem.type === 'lesson' ? (
               <LessonCard
-                lesson={lesson}
-                isClickable={
-                  lesson.status === 'completed' ||
-                  (lesson.status === 'upcoming' &&
-                    lessons.filter((l) => l.status === 'upcoming')[0].id === lesson.id)
-                }
-                onAddTopic={handleAddTopic}
-                onDeleteTopic={handleDeleteTopic}
+                lesson={activeItem.lesson}
+                isClickable={false}
+                isDraggingOverlay={true}
+                onAddTopic={() => {}}
+                onDeleteTopic={() => {}}
                 studentId={studentId}
-                onLessonGenerated={handleLessonGenerated}
+                onLessonGenerated={() => {}}
                 isGeneratingGlobal={isGeneratingGlobal}
                 setIsGeneratingGlobal={setIsGeneratingGlobal}
               />
-            </SortableContext>
-          ))}
-        </div>
-        <DragOverlay>
-          {activeTopic && activeId ? (
-            <TopicItem
-              topic={activeTopic}
-              lessonId={findContainer(activeId) as UniqueIdentifier}
-            />
+            ) : activeItem.type === 'topic' ? (
+              <TopicItem
+                topic={activeItem.topic}
+                lessonId={activeItem.lessonId}
+              />
+            ) : null
           ) : null}
         </DragOverlay>
       </DndContext>

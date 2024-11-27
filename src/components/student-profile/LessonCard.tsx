@@ -3,12 +3,14 @@ import { useRouter } from 'next/navigation';
 import { Lesson } from '@/types/lesson';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import TopicItem from './TopicItem';
 import { Button } from '@/components/ui/button';
 import { PlusIcon } from '@heroicons/react/24/outline';
-import { Sparkles, BookOpen, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Sparkles, BookOpen, RefreshCw, CheckCircle2} from 'lucide-react';
+import { Bars3Icon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/hooks/useAuth';
-import { CSSTransition, SwitchTransition } from 'react-transition-group';
 import { toast } from 'react-toastify';
 
 interface LessonCardProps {
@@ -20,6 +22,7 @@ interface LessonCardProps {
   onLessonGenerated: (lessonId: string) => void;
   isGeneratingGlobal: boolean;
   setIsGeneratingGlobal: React.Dispatch<React.SetStateAction<boolean>>;
+  isDraggingOverlay?: boolean;
 }
 
 const LessonCard = ({
@@ -31,6 +34,7 @@ const LessonCard = ({
   onLessonGenerated,
   isGeneratingGlobal,
   setIsGeneratingGlobal,
+  isDraggingOverlay = false,
 }: LessonCardProps) => {
   const router = useRouter();
   const lessonId = lesson.id;
@@ -47,7 +51,6 @@ const LessonCard = ({
     .map((t) => t.topicName)
     .join(', ')}`;
 
-  // Clean up timeout on unmount
   useEffect(() => {
     return () => {
       if (successTimeoutRef.current) {
@@ -59,7 +62,6 @@ const LessonCard = ({
   const handleGenerateLesson = async (event: React.MouseEvent) => {
     event.stopPropagation();
 
-    // Check if another lesson is being generated
     if (isGeneratingGlobal) {
       toast.error('Please wait for the previous lesson to finish generating.');
       return;
@@ -83,9 +85,7 @@ const LessonCard = ({
 
       if (response.ok) {
         onLessonGenerated(lessonId);
-        // Show success state
         setShowSuccess(true);
-        // Reset after 2 seconds
         successTimeoutRef.current = setTimeout(() => {
           setShowSuccess(false);
         }, 2000);
@@ -106,6 +106,26 @@ const LessonCard = ({
       type: 'lesson',
     },
   });
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setSortableNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: lesson.id,
+    data: {
+      type: 'lesson',
+    },
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   const handleAddTopicClick = () => {
     setShowForm(true);
@@ -231,8 +251,15 @@ const LessonCard = ({
   };
 
   return (
-    <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 flex">
-      {/* Left Side: Topics */}
+    <div
+      ref={isDraggingOverlay ? undefined : setSortableNodeRef}
+      style={style}
+      className={`bg-white rounded-lg p-4 shadow-sm border border-gray-200 flex ${isDragging ? 'z-50' : ''}`}
+    >
+      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing mr-2">
+        <Bars3Icon className="w-6 h-6 text-gray-500" />
+      </div>
+
       <div className="flex-1">
         <h2 className="text-xl font-semibold">{lessonTitle}</h2>
 
@@ -302,7 +329,6 @@ const LessonCard = ({
         </SortableContext>
       </div>
 
-      {/* Right Side: Action Buttons */}
       <div className="flex flex-col items-center justify-center ml-4">
         {renderActionButton()}
       </div>

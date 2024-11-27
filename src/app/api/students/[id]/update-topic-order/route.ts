@@ -38,7 +38,6 @@ export async function POST(
 
     const { lessons } = await request.json();
 
-    // Update the level document to include the lessons as they are
     await levelRef.update({
       lessons: lessons.map((lesson: any) => ({
         id: lesson.id,
